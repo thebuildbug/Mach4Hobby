@@ -1,0 +1,20 @@
+function m6()
+
+	local inst = mc.mcGetInstance()
+	local selectedtool = mc.mcToolGetSelected(inst)
+	local currenttool = mc.mcToolGetCurrent(inst)
+	
+	if selectedtool == currenttool then
+		mc.mcCntlSetLastError(inst, "Current tool == Selected tool so there is nothing to do")
+	else
+		--Remove this line if you would not like the Z axis to move
+		--mc.mcCntlGcodeExecute(inst, "G90 G53 G0 Z0.0");--Move the Z axis all the way up
+		mc.mcCntlToolChangeManual(inst, true);
+		mc.mcCntlSetLastError(inst, "Current tool == " .. tostring(selectedtool) .. "   Previous Tool == " .. tostring(currenttool))
+		mc.mcToolSetCurrent(inst, selectedtool)
+	end
+end
+
+if (mc.mcInEditor() == 1) then
+ m6()
+end

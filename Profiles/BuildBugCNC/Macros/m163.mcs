@@ -1,0 +1,24 @@
+function m163_setOutput(number)
+	local Osig = mc.OSIG_OUTPUT0
+	Osig = (Osig + number)
+	local hReg = mc.mcSignalGetHandle(inst, Osig)
+	if( hReg ~= nil ) then
+		mc.mcSignalSetState(hReg, false) --Turn the output off
+	end
+end
+
+function m163(hParam) --The param is a P value called from Gcode. M162P3 for example.
+	if (hParam ~= nil) then
+		local inst = mc.mcGetInstance()
+		local varP = 0
+		local flagP, rc = mc.mcCntlGetLocalVarFlag(inst, hParam, mc.SV_P)
+		if (flagP == 1) then --Check that the flag has been set so we do not get an unexpected value for mc.SV_P
+			varP = mc.mcCntlGetLocalVar(inst, hParam, mc.SV_P)
+			m163_setOutput(varP)
+		end
+	end
+end
+
+if (mc.mcInEditor() == 1) then
+    m163_setOutput(1)
+end

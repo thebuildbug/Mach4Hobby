@@ -1,0 +1,13 @@
+---------------------------------------------------------------
+-- Load modules that you want to be able to use from Mcodes
+---------------------------------------------------------------
+inst = mc.mcGetInstance()
+local profile = mc.mcProfileGetName(inst)
+local path = mc.mcCntlGetMachDir(inst)
+
+package.path = path .. "\\Profiles\\" .. profile .. "\\Modules\\?.lua;" .. path .. "\\Modules\\?.lua;"
+--package.path = path .. "\\Modules\\?.lua;" .. path .. "\\Profiles\\" ..  profile .. "\\Modules\\?.lua;"
+
+--ErrorCheck module
+package.loaded.mcErrorCheck = nil
+ec = require "mcErrorCheck"

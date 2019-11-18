@@ -1,0 +1,27 @@
+# Ignore icon files
+**.ico
+
+# Ignore windows executables and dll's wherever they are found
+**.exe
+**.dll
+
+# Ignore all compiled Mach4 scripts
+**.mcc
+
+# Ignore all binary data files
+**.dat
+
+# Ignore all the following Subdirectories
+/CrashReports
+/Docs
+/GcodeFiles
+/Lang
+/Licenses
+/LuaExamples
+/Modules
+/Plugins
+/Pmc
+/Subroutines
+/Wizards
+/ZeroBraneStudio
+
