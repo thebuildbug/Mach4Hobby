@@ -1,8 +1,0 @@
-# Ignore Everything
-*
-# Allow descent into directories
-!*/
-# Whitelist all Profile directories you want to track
-!.gitignore
-!/BuildBugCNC/**
-

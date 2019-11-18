@@ -20,8 +20,27 @@
 /LuaExamples
 /Modules
 /Plugins
+/Profiles/Mach4_Tangential_BETA/
+/Profiles/
+/Profiles/Mach4Lathe/
+/Profiles/Mach4Mill/
+/Profiles/Mach4Mill_6Axis/
+/Profiles/Mach4Router/
+/Profiles/PMDX-424-Sample/
+/Profiles/PMDX-Sample/
+/Profiles/TestProfile/
 /Pmc
 /Subroutines
+/Screens/Blank.set
+/Screens/Engrave_Marking.set
+/Screens/OrthMill.set
+/Screens/wx4.set
+/Screens/wx4_Tangential.set
+/Screens/wx6.set
+/Screens/wxLathe.set
+/Screens/wxMach.set
+/Screens/wxMinimal.set
+/Screens/wxRouter.set
 /Wizards
 /ZeroBraneStudio
 
