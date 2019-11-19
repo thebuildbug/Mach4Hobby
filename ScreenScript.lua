@@ -303,7 +303,7 @@ end
 function VfdFaultCheck()
 	local handleI8 = mc.mcSignalGetHandle(inst, mc.ISIG_INPUT8);
 	local stateI8 = mc.mcSignalGetState(handleI8);
-	if (stateI8 ~= 1) then
+	if (stateI8 ~= 0) then
 		mc.mcCntlEStop(inst);
 		mc.mcCntlSetLastError(inst, 'VFD reported a fault.');
 	end
