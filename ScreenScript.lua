@@ -35,6 +35,9 @@ Tframe = nil --TouchFrame handle
 ---------------------------------------------------------------
 SigLib = {
 [mc.OSIG_MACHINE_ENABLED] = function (state)
+	if (state == 1) then
+		VfdFaultCheck();
+	end
     machEnabled = state;
     ButtonEnable()
 end,
@@ -50,6 +53,10 @@ end,
 --        --mc.mcCntlFeedHold (0)
 --    end
 
+end,
+
+[mc.ISIG_INPUT8] = function (state)
+    VfdFaultCheck();
 end,
 
 [mc.OSIG_JOG_CONT] = function (state)
@@ -284,6 +291,23 @@ function SecondsToTime(seconds)
 	end
 end
 
+
+---------------------------------------------------------------
+-- Check VFD for faults
+-- The VFD continuously pulls PMDX-424's input pin #8 to ground
+-- when the VFD is in 'No Fault' state. When a fault is reported
+-- input pin #8 will loose continuity with ground and thus cause
+-- the pin to go from state 1 to state 0. Mach4 should enter EStop
+-- when this occurs.
+---------------------------------------------------------------
+function VfdFaultCheck()
+	local handleI8 = mc.mcSignalGetHandle(inst, mc.ISIG_INPUT8);
+	local stateI8 = mc.mcSignalGetState(handleI8);
+	if (stateI8 ~= 1) then
+		mc.mcCntlEStop(inst);
+		mc.mcCntlSetLastError(inst, 'VFD reported a fault.');
+	end
+end
 ---------------------------------------------------------------
 -- Set Button Jog Mode to Cont.
 ---------------------------------------------------------------
