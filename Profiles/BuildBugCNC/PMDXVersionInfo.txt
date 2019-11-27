@@ -1,10 +1,10 @@
-Mon Nov 18 16:32:19 2019
+Tue Nov 26 18:09:39 2019
 Mach4 Version: 3804
 Screen Set: wx4_buildbugcnc.set
-Device: PMDX-424 [Rev D PCB] on COM3
-Serial Number: SN37959 (D1 )
+Device: Unknown PMDX device [UNKNOWN PCB] on NoDevice
+Serial Number: Unavailable, no device found
 Plug-in Version: 0.53.263
-Bootloader Version: 1.15.76
-Firmware Version: 0.60.208
+Bootloader Version: Unavailable, no device found
+Firmware Version: Unavailable, no device found
 
 ---  End  ---
