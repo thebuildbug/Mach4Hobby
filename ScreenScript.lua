@@ -714,6 +714,205 @@ function droJogRate_On_Modify_Script(...)
     local val = scr.GetProperty("droJogRate", "Value")
     mc.mcProfileWriteString(inst, "PersistentDROs", "droJogRate", string.format (val)) --Create a register and write the machine coordinates to it
 end
+function panelZTouch_1__Script(...)
+    -----------------------------------------------------------------------------
+    -- Name:        Z-Touch Plate Tool
+    -- Author:      The Build Bug
+    -- Modified by:
+    -- Created:     11/25/2019
+    -- Copyright:   (c) TheBuildBug. All rights reserved.
+    -- Licence:     GNU license - This header can not be removed 
+    -- Description: This panel is intended to be used with a Z-axis touch plate
+    --              made by CNC Router Parts (a.k.a Avid CNC). It is intended to
+    --              provide code to allow you to use the touch plate to define
+    --              work coordinates for X, Y, and Z axes using the touch plate
+    --              as designed.
+    -----------------------------------------------------------------------------
+    require("wx")
+    
+    function GetNextID()
+        m_id = m_id+1
+        return m_id
+    end
+    
+    --Global Array to hold all UI elements
+    UI = {}
+    m_id = 0
+    m_iniName = "Z-Touch Plate"
+    m_position = 0;
+    m_axis = 0;
+    
+    ID_MPG_X_BUT  = GetNextID()
+    ID_MPG_Y_BUT  = GetNextID()
+    ID_MPG_Z_BUT  = GetNextID()
+    ID_MPG_INC  = GetNextID()
+    ID_CLOSE_BUTTON  = GetNextID()
+    ID_PANNEL  = GetNextID()
+    
+    function main()
+    	
+    	-- Get the parnet Panel, create it if needed
+    	if (mcLuaPanelParent == nil) then
+    		-- Create the main Frame and the main Panel.
+    		-- (Only used when run outside of Mach4)
+    		UI.MainFrame = wx.wxFrame (wx.NULL, wx.wxID_ANY, "Z-Touch Plate: Edge Finder Tool", wx.wxDefaultPosition, wx.wxSize( 425,220 ), wx.wxDEFAULT_FRAME_STYLE+wx.wxTAB_TRAVERSAL )				
+    		UI.m_MainPanel = wx.wxPanel( UI.MainFrame, wx.wxID_ANY, wx.wxDefaultPosition, wx.wxDefaultSize, wx.wxTAB_TRAVERSAL )
+    		UI.MainFrame:SetSizeHints( wx.wxDefaultSize, wx.wxDefaultSize )
+    	else
+    		-- The parent already exists so get it's attributes
+    		UI.m_MainPanel = mcLuaPanelParent
+    		local window = UI.m_MainPanel:GetParent()
+    		local wsize = window:GetSize()
+    		UI.m_MainPanel:SetSize(wsize)
+    	end -- if (mcLuaPanelParent == nil)
+    	
+    	
+    	-- Add all UI components to the Panel.
+    	addWxWidgetComponents()
+    
+    
+    	-- Show the panel just created
+    	if (mcLuaPanelParent == nil) then
+            UI.m_MainPanel:Connect(ID_CLOSE_BUTTON, wx.wxEVT_COMMAND_BUTTON_CLICKED,
+                            function(event) mainframe:Destroy() end)
+    		UI.MainFrame:SetSizer( UI.bSizerMainFrameOuter )
+    		UI.MainFrame:Layout()
+    		UI.MainFrame:Centre( wx.wxBOTH )
+            UI.m_MainPanel:Fit()
+            UI.MainFrame:Fit()
+            UI.MainFrame:Show(true)
+        else
+            local window = UI.m_MainPanel:GetParent()
+            window:Connect(wx.wxID_ANY, wx.wxEVT_SIZE,
+            function(event)
+                local wsize = event:GetSize()
+                UI.m_MainPanel:SetSize(wsize)
+                UI.m_MainPanel:FitInside()
+    			event:Skip()
+            end)
+        end
+    	
+    end -- END main()
+    
+    -- The code within this function was generated using wxFormBuilder
+    -- it was slightly modified to allow us to run this code both within
+    -- Mach4 and standalone within ZeroBrane Studio.
+    function addWxWidgetComponents()
+    
+    	UI.bSizerMainFrameOuter = wx.wxBoxSizer( wx.wxVERTICAL )
+    
+    	UI.bSizerMainFrameInner = wx.wxBoxSizer( wx.wxVERTICAL )
+    
+    	UI.fgSizerMain = wx.wxFlexGridSizer( 2, 1, 0, 0 )
+    	UI.fgSizerMain:SetFlexibleDirection( wx.wxVERTICAL )
+    	UI.fgSizerMain:SetNonFlexibleGrowMode( wx.wxFLEX_GROWMODE_SPECIFIED )
+    
+    	UI.bSizerRowOne = wx.wxBoxSizer( wx.wxVERTICAL )
+    
+    	UI.gSizerThreeColumn = wx.wxGridSizer( 1, 3, 0, 0 )
+    
+    	UI.sbSizerAxes = wx.wxStaticBoxSizer( wx.wxStaticBox( UI.m_MainPanel, wx.wxID_ANY, "Axes" ), wx.wxVERTICAL )
+    
+    	UI.gSizerRadioAxes = wx.wxGridSizer( 3, 1, 0, 0 )
+    
+    	UI.m_radioBtnZAxis = wx.wxRadioButton( UI.sbSizerAxes:GetStaticBox(), wx.wxID_ANY, "Z-Axis", wx.wxDefaultPosition, wx.wxDefaultSize, wx.wxRB_SINGLE )
+    	UI.m_radioBtnZAxis:SetValue( True )
+    	--UI.m_radioBtnZAxis:Enable( False ) -- TODO - implement something more clever to prevent user from unselecting
+    
+    	UI.gSizerRadioAxes:Add( UI.m_radioBtnZAxis, 0, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxALL, 5 )
+    
+    	UI.m_radioBtnXAxis = wx.wxRadioButton( UI.sbSizerAxes:GetStaticBox(), wx.wxID_ANY, "X-Axis", wx.wxDefaultPosition, wx.wxDefaultSize, wx.wxRB_SINGLE )
+    	UI.gSizerRadioAxes:Add( UI.m_radioBtnXAxis, 0, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxALL, 5 )
+    
+    	UI.m_radioBtnYAxis = wx.wxRadioButton( UI.sbSizerAxes:GetStaticBox(), wx.wxID_ANY, "Y-Axis", wx.wxDefaultPosition, wx.wxDefaultSize, wx.wxRB_SINGLE )
+    	UI.gSizerRadioAxes:Add( UI.m_radioBtnYAxis, 0, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxALL, 5 )
+    
+    
+    	UI.sbSizerAxes:Add( UI.gSizerRadioAxes, 1, wx.wxEXPAND, 0 )
+    
+    
+    	UI.gSizerThreeColumn:Add( UI.sbSizerAxes, 1, wx.wxEXPAND, 0 )
+    
+    	UI.sbSizerRadioOrientation = wx.wxStaticBoxSizer( wx.wxStaticBox( UI.m_MainPanel, wx.wxID_ANY, "Orientation" ), wx.wxVERTICAL )
+    
+    	UI.gSizerOrinetation = wx.wxGridSizer( 4, 1, 0, 0 )
+    
+    	UI.m_radioBtnLeftFront = wx.wxRadioButton( UI.sbSizerRadioOrientation:GetStaticBox(), wx.wxID_ANY, "   Left / Front", wx.wxDefaultPosition, wx.wxDefaultSize, wx.wxRB_GROUP )
+    	UI.gSizerOrinetation:Add( UI.m_radioBtnLeftFront, 0, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxALL, 5 )
+    
+    	UI.m_radioBtnLeftRear = wx.wxRadioButton( UI.sbSizerRadioOrientation:GetStaticBox(), wx.wxID_ANY,  "    Left / Rear", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
+    	UI.gSizerOrinetation:Add( UI.m_radioBtnLeftRear, 0, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxALL, 5 )
+    
+    	UI.m_radioBtnRightFront = wx.wxRadioButton( UI.sbSizerRadioOrientation:GetStaticBox(), wx.wxID_ANY, "Right / Front", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
+    	UI.gSizerOrinetation:Add( UI.m_radioBtnRightFront, 0, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxALL, 5 )
+    
+    	UI.m_radioBtnRightRear = wx.wxRadioButton( UI.sbSizerRadioOrientation:GetStaticBox(), wx.wxID_ANY,  " Right / Rear", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
+    	UI.gSizerOrinetation:Add( UI.m_radioBtnRightRear, 0, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxALL, 5 )
+    
+    
+    	UI.sbSizerRadioOrientation:Add( UI.gSizerOrinetation, 1, wx.wxEXPAND, 5 )
+    
+    
+    	UI.gSizerThreeColumn:Add( UI.sbSizerRadioOrientation, 1, wx.wxEXPAND, 5 )
+    
+    	UI.gSizerRadioAction = wx.wxGridSizer( 3, 1, 0, 0 )
+    
+    	UI.m_buttonOkay = wx.wxButton( UI.m_MainPanel, wx.wxID_ANY, "OK", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
+    	UI.gSizerRadioAction:Add( UI.m_buttonOkay, 0, wx.wxALL + wx.wxALIGN_CENTER_HORIZONTAL, 5 )
+    
+    	UI.m_buttonCancel = wx.wxButton( UI.m_MainPanel, wx.wxID_ANY, "Cancel", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
+    	UI.gSizerRadioAction:Add( UI.m_buttonCancel, 0, wx.wxALL + wx.wxALIGN_CENTER_HORIZONTAL, 5 )
+    
+    	UI.m_radioBtnPauseBetweenAxes = wx.wxRadioButton( UI.m_MainPanel, wx.wxID_ANY, "Pause Between Axes", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
+    	UI.gSizerRadioAction:Add( UI.m_radioBtnPauseBetweenAxes, 0, wx.wxALL, 5 )
+    
+    
+    	UI.gSizerThreeColumn:Add( UI.gSizerRadioAction, 1, wx.wxALIGN_BOTTOM + wx.wxALIGN_RIGHT, 0 )
+    
+    
+    	UI.bSizerRowOne:Add( UI.gSizerThreeColumn, 1, wx.wxALL + wx.wxEXPAND, 0 )
+    
+    
+    	UI.fgSizerMain:Add( UI.bSizerRowOne, 1, wx.wxALIGN_CENTER_HORIZONTAL, 0 )
+    
+    	UI.sbSizerRowTwo = wx.wxStaticBoxSizer( wx.wxStaticBox( UI.m_MainPanel, wx.wxID_ANY, "Tool Diameter" ), wx.wxVERTICAL )
+    
+    	UI.bSizerRow2 = wx.wxBoxSizer( wx.wxHORIZONTAL )
+    
+    	UI.m_staticTextToolDiameter = wx.wxStaticText( UI.sbSizerRowTwo:GetStaticBox(), wx.wxID_ANY, "Tool Diameter:", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
+    	UI.m_staticTextToolDiameter:Wrap( -1 )
+    
+    	UI.bSizerRow2:Add( UI.m_staticTextToolDiameter, 0, wx.wxALIGN_CENTER_VERTICAL + wx.wxALL, 5 )
+    
+    	UI.m_textCtrlToolDiameter = wx.wxTextCtrl( UI.sbSizerRowTwo:GetStaticBox(), wx.wxID_ANY, "0", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
+    	UI.bSizerRow2:Add( UI.m_textCtrlToolDiameter, 0, wx.wxALIGN_CENTER_VERTICAL + wx.wxALL, 5 )
+    
+    	UI.m_radioBtnInches = wx.wxRadioButton( UI.sbSizerRowTwo:GetStaticBox(), wx.wxID_ANY, "Inches", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
+    	UI.bSizerRow2:Add( UI.m_radioBtnInches, 0, wx.wxALIGN_CENTER_VERTICAL + wx.wxALL, 5 )
+    
+    	UI.m_radioBtnMillimeters = wx.wxRadioButton( UI.sbSizerRowTwo:GetStaticBox(), wx.wxID_ANY, "Millimeters", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
+    	UI.bSizerRow2:Add( UI.m_radioBtnMillimeters, 0, wx.wxALIGN_CENTER_VERTICAL + wx.wxALL, 5 )
+    
+    
+    	UI.sbSizerRowTwo:Add( UI.bSizerRow2, 1, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxALIGN_TOP, 0 )
+    
+    
+    	UI.fgSizerMain:Add( UI.sbSizerRowTwo, 1, wx.wxEXPAND, 5 )
+    
+    
+    	UI.m_MainPanel:SetSizer( UI.fgSizerMain )
+    	UI.m_MainPanel:Layout()
+    	UI.fgSizerMain:Fit( UI.m_MainPanel )
+    	UI.bSizerMainFrameInner:Add( UI.m_MainPanel, 1, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxEXPAND, 0 )
+    
+    
+    	UI.bSizerMainFrameOuter:Add( UI.bSizerMainFrameInner, 1, wx.wxALL + wx.wxEXPAND, 0 )
+    
+    end -- END addWxWidgetComponents()
+    
+    main()
+    wx.wxGetApp():MainLoop()
+end
 function tabPositionsExtens_On_Enter_Script(...)
     local rc;
     local tabG_Mdi, rc = scr.GetProperty("nbGCodeMDI1", "Current Tab")
