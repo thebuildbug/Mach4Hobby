@@ -730,51 +730,74 @@ function panelZTouch_1__Script(...)
     -----------------------------------------------------------------------------
     require("wx")
     
-    function GetNextID()
-        m_id = m_id+1
-        return m_id
-    end
-    
     --Global Array to hold all UI elements
     UI = {}
-    m_id = 0
-    m_iniName = "Z-Touch Plate"
-    m_position = 0;
-    m_axis = 0;
     
-    ID_MPG_X_BUT  = GetNextID()
-    ID_MPG_Y_BUT  = GetNextID()
-    ID_MPG_Z_BUT  = GetNextID()
-    ID_MPG_INC  = GetNextID()
-    ID_CLOSE_BUTTON  = GetNextID()
-    ID_PANNEL  = GetNextID()
+    -- Global Array to hold user input data
+    DATA = {}
+    
+    -- Orientation Radio Button Indexs
+    ORIENTATION = { ["LEFT FRONT"]  = 0, 
+    				["LEFT REAR"]   = 1, 
+    				["RIGHT FRONT"] = 2, 
+    				["RIGHT REAR"]  = 3}
+    			
+    I_ORIENTATION = {[0] = "LEFT FRONT",
+    	             [1] = "LEFT REAR",
+    				 [2] = "RIGHT FRONT",
+    				 [3] = "RIGHT REAR" }
+    	
+    -- Unit of Measure
+    INCHES = 0
+    MILLIMETERS = 1
+    
+    UNITS = {["INCHES"] = 0,
+    	     ["METRIC"] = 1}
+    	
+    I_UNITS = {[0] = "INCHES",
+    	       [1] = "MILLIMETERS"}
+    
     
     function main()
     	
-    	-- Get the parnet Panel, create it if needed
+    	-- Get the parent Panel, create the main Frame and Panel  if needed
     	if (mcLuaPanelParent == nil) then
     		-- Create the main Frame and the main Panel.
     		-- (Only used when run outside of Mach4)
-    		UI.MainFrame = wx.wxFrame (wx.NULL, wx.wxID_ANY, "Z-Touch Plate: Edge Finder Tool", wx.wxDefaultPosition, wx.wxSize( 425,220 ), wx.wxDEFAULT_FRAME_STYLE+wx.wxTAB_TRAVERSAL )				
-    		UI.m_MainPanel = wx.wxPanel( UI.MainFrame, wx.wxID_ANY, wx.wxDefaultPosition, wx.wxDefaultSize, wx.wxTAB_TRAVERSAL )
+    		UI.MainFrame = wx.wxFrame (wx.NULL, 
+    			                       wx.wxID_ANY, 
+    								   "Z-Touch Plate: Edge Finder Tool",
+    								   wx.wxDefaultPosition,
+    								   wx.wxSize( 425,220 ), 
+    								   wx.wxDEFAULT_FRAME_STYLE+wx.wxTAB_TRAVERSAL )
+    		UI.m_MainPanel = wx.wxPanel( UI.MainFrame, 
+    			                         wx.wxID_ANY, 
+    									 wx.wxDefaultPosition, 
+    									 wx.wxDefaultSize, 
+    									 wx.wxTAB_TRAVERSAL )
     		UI.MainFrame:SetSizeHints( wx.wxDefaultSize, wx.wxDefaultSize )
+    		UI.EventHandler = UI.MainFrame:GetEventHandler()
     	else
     		-- The parent already exists so get it's attributes
     		UI.m_MainPanel = mcLuaPanelParent
     		local window = UI.m_MainPanel:GetParent()
     		local wsize = window:GetSize()
     		UI.m_MainPanel:SetSize(wsize)
+    		UI.EventHandler = UI.m_MainPanel:GetEventHandler()
     	end -- if (mcLuaPanelParent == nil)
     	
     	
-    	-- Add all UI components to the Panel.
-    	addWxWidgetComponents()
-    
+    	-- Add all UI components to the Z Touchplate Panel.
+    	loadWxWidgetComponentsForZTouchplatePanel()
+    	
+    	-- Bind UI events to their control functions
+    	bindUIEvents()
     
     	-- Show the panel just created
     	if (mcLuaPanelParent == nil) then
-            UI.m_MainPanel:Connect(ID_CLOSE_BUTTON, wx.wxEVT_COMMAND_BUTTON_CLICKED,
-                            function(event) mainframe:Destroy() end)
+    --        UI.m_MainPanel:Connect(ID_CLOSE_BUTTON, 
+    --			                     wx.wxEVT_COMMAND_BUTTON_CLICKED,
+    --                               function(event) mainframe:Destroy() end)
     		UI.MainFrame:SetSizer( UI.bSizerMainFrameOuter )
     		UI.MainFrame:Layout()
     		UI.MainFrame:Centre( wx.wxBOTH )
@@ -794,10 +817,143 @@ function panelZTouch_1__Script(...)
     	
     end -- END main()
     
-    -- The code within this function was generated using wxFormBuilder
-    -- it was slightly modified to allow us to run this code both within
-    -- Mach4 and standalone within ZeroBrane Studio.
-    function addWxWidgetComponents()
+    
+    --[[
+    	Main logic for Z-Touch Plate Probing Procedure.
+    --]]
+    function runTouchPlateProcedure()
+    	
+    	-- Show error dialog if ToolDiameter is not a valid number.
+    	if (tonumber(UI.m_textCtrlToolDiameter:GetValue()) == nil) then
+    		wx.wxMessageBox("Tool Diameter must be a valid number!", "Invalid Input", wx.wxICON_ERROR)
+    		return 
+    	end
+    	
+    	gatherUserInputData()
+    	
+    	printUserData()
+    	
+    	-- Clear input data
+    	clearUserInputData()
+    end
+    
+    
+    -- Assemble the input data the user has entered.
+    function gatherUserInputData() 
+    	-- Axes to probe
+    	DATA.zaxis = true; -- Z-Axis is always probed
+    	if (UI.m_checkBoxXAxis:GetValue()) then
+    		DATA.xaxis = true
+    	else
+    		DATA.xaxis = false
+    	end
+    	if (UI.m_checkBoxYAxis:GetValue()) then
+    		DATA.yaxis = true
+    	else
+    		DATA.yaxis = false
+    	end
+    	
+    	-- Touch plate orientation
+    	DATA.orientation = UI.m_radioBoxOrient:GetSelection()
+    	
+    	-- Tool Diameter
+    	DATA.toolDiameter = tonumber(UI.m_textCtrlToolDiameter:GetValue())
+    	
+    	-- Unit of Measure
+    	if (UI.m_radioBtnMillimeters:GetValue()) then
+    		DATA.unitOfMeasure = MILLIMETERS
+    	else
+    		DATA.unitOfMeasure = INCHES
+    	end
+    	
+    	-- Pause Between Measures
+    	if (UI.m_checkBoxPauseBetweenAxes:GetValue()) then 
+    		DATA.pauseBetweenMeasure = true
+    	else
+    		DATA.pauseBetweenMeasure = false
+    	end
+    	
+    end -- END gatherUserInputData()
+    
+    function clearUserInputData()
+    	DATA.zaxis = nil
+    	DATA.xaxis = nil
+    	DATA.yaxis = nil
+        DATA.orientation = nil
+    	DATA.toolDiameter = nil
+    	DATA.unitOfMeasure = nil
+    	DATA.pauseBetweenMeasure= nil
+    end
+    
+    function printUserData()
+    	local msg = "---------------------------------------------------\n" ..
+    	            "  Z-axis: " .. tostring(DATA.zaxis) .. "\n" ..
+    	            "  X-axis: " .. tostring(DATA.xaxis) .. "\n" ..
+    				"  Y-axis: " .. tostring(DATA.yaxis) .. "\n" ..
+    				"  Orient: " .. I_ORIENTATION[DATA.orientation] .. "\n" ..
+    				"Tool Dia: " .. DATA.toolDiameter .. "\n" ..
+    				"    Unit: " .. I_UNITS[DATA.unitOfMeasure] .. "\n" ..
+    				"   Pause: " .. tostring(DATA.pauseBetweenMeasure) .. "\n" ..
+    				"---------------------------------------------------\n"
+    			wx.wxMessageBox(msg)
+    end
+    
+    -------------------------------------------------------------------------------
+    -- Event Handlers
+    -------------------------------------------------------------------------------
+    -- Bind functions to the various events triggered by the user interacting
+    -- with the wxWidget UI components.
+    function bindUIEvents()
+    	
+    	-- Axis CheckBoxes
+    	UI.m_MainPanel:Connect(wx.wxID_ANY,
+    						   wx.wxID_ANY,
+    						   wx.wxEVT_COMMAND_CHECKBOX_CLICKED,
+    						   function(event)
+    								handleCheckBoxClicked(event)
+    						   end)
+    	-- Button Click
+    	UI.m_MainPanel:Connect(wx.wxID_ANY,
+    						   wx.wxID_ANY,
+    						   wx.wxEVT_COMMAND_BUTTON_CLICKED,
+    						   function(event)
+    								handleButtonClicked(event)
+    						   end)
+    end
+    
+    
+    -- Handle CheckBoxClicked events for entire panel
+    function handleCheckBoxClicked(event)
+    	local checkBox = event:GetEventObject():DynamicCast("wxCheckBox")
+    	local checkBoxLabel = checkBox:GetLabel()
+    	if (checkBoxLabel == "Z-Axis") then
+    		checkBox:SetValue(true) -- DO NOT ALLOW Z-Axis to be un-selected
+    	end
+    end
+    
+    -- Handle ButtonClicked events for entire panel
+    function handleButtonClicked(event)
+    	local button = event:GetEventObject():DynamicCast("wxButton")
+    	local buttonLabel = button:GetLabel()
+    	if (buttonLabel == "OK") then
+    		runTouchPlateProcedure()
+    	elseif (buttonLabel == "Cancel") then
+    		wx.wxMessageBox("Cancel button clicked!")
+    	end
+    end
+    
+    
+    -------------------------------------------------------------------------------
+    -- wxWidgets Components
+    -------------------------------------------------------------------------------
+    --[[
+    --   The code within this function was generated using wxFormBuilder
+    --   and slightly modified to allow us to run the code both within
+    --   Mach4 and standalone/debug within ZeroBrane Studio. The only 
+    --   difference is that standalone/debug requires us to create the
+    --   parent frame (which is done outside this function).
+    --]]
+    function loadWxWidgetComponentsForZTouchplatePanel()
     
     	UI.bSizerMainFrameOuter = wx.wxBoxSizer( wx.wxVERTICAL )
     
@@ -814,46 +970,29 @@ function panelZTouch_1__Script(...)
     	UI.sbSizerAxes = wx.wxStaticBoxSizer( wx.wxStaticBox( UI.m_MainPanel, wx.wxID_ANY, "Axes" ), wx.wxVERTICAL )
     
     	UI.gSizerRadioAxes = wx.wxGridSizer( 3, 1, 0, 0 )
+    	
+    	UI.m_checkBoxZAxis = wx.wxCheckBox( UI.sbSizerAxes:GetStaticBox(), wx.wxID_ANY, "Z-Axis", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
+    	UI.m_checkBoxZAxis:SetValue(true)
     
-    	UI.m_radioBtnZAxis = wx.wxRadioButton( UI.sbSizerAxes:GetStaticBox(), wx.wxID_ANY, "Z-Axis", wx.wxDefaultPosition, wx.wxDefaultSize, wx.wxRB_SINGLE )
-    	UI.m_radioBtnZAxis:SetValue( True )
-    	--UI.m_radioBtnZAxis:Enable( False ) -- TODO - implement something more clever to prevent user from unselecting
+    	UI.gSizerRadioAxes:Add( UI.m_checkBoxZAxis, 0, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxALL, 5 )
     
-    	UI.gSizerRadioAxes:Add( UI.m_radioBtnZAxis, 0, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxALL, 5 )
+    	UI.m_checkBoxXAxis = wx.wxCheckBox( UI.sbSizerAxes:GetStaticBox(), wx.wxID_ANY, "X-Axis", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
+    	UI.gSizerRadioAxes:Add( UI.m_checkBoxXAxis, 0, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxALL, 5 )
     
-    	UI.m_radioBtnXAxis = wx.wxRadioButton( UI.sbSizerAxes:GetStaticBox(), wx.wxID_ANY, "X-Axis", wx.wxDefaultPosition, wx.wxDefaultSize, wx.wxRB_SINGLE )
-    	UI.gSizerRadioAxes:Add( UI.m_radioBtnXAxis, 0, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxALL, 5 )
-    
-    	UI.m_radioBtnYAxis = wx.wxRadioButton( UI.sbSizerAxes:GetStaticBox(), wx.wxID_ANY, "Y-Axis", wx.wxDefaultPosition, wx.wxDefaultSize, wx.wxRB_SINGLE )
-    	UI.gSizerRadioAxes:Add( UI.m_radioBtnYAxis, 0, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxALL, 5 )
-    
+    	UI.m_checkBoxYAxis = wx.wxCheckBox( UI.sbSizerAxes:GetStaticBox(), wx.wxID_ANY, "Y-Axis", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
+    	UI.gSizerRadioAxes:Add( UI.m_checkBoxYAxis, 0, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxALL, 5 )
     
     	UI.sbSizerAxes:Add( UI.gSizerRadioAxes, 1, wx.wxEXPAND, 0 )
     
     
     	UI.gSizerThreeColumn:Add( UI.sbSizerAxes, 1, wx.wxEXPAND, 0 )
     
-    	UI.sbSizerRadioOrientation = wx.wxStaticBoxSizer( wx.wxStaticBox( UI.m_MainPanel, wx.wxID_ANY, "Orientation" ), wx.wxVERTICAL )
-    
     	UI.gSizerOrinetation = wx.wxGridSizer( 4, 1, 0, 0 )
-    
-    	UI.m_radioBtnLeftFront = wx.wxRadioButton( UI.sbSizerRadioOrientation:GetStaticBox(), wx.wxID_ANY, "   Left / Front", wx.wxDefaultPosition, wx.wxDefaultSize, wx.wxRB_GROUP )
-    	UI.gSizerOrinetation:Add( UI.m_radioBtnLeftFront, 0, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxALL, 5 )
-    
-    	UI.m_radioBtnLeftRear = wx.wxRadioButton( UI.sbSizerRadioOrientation:GetStaticBox(), wx.wxID_ANY,  "    Left / Rear", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
-    	UI.gSizerOrinetation:Add( UI.m_radioBtnLeftRear, 0, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxALL, 5 )
-    
-    	UI.m_radioBtnRightFront = wx.wxRadioButton( UI.sbSizerRadioOrientation:GetStaticBox(), wx.wxID_ANY, "Right / Front", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
-    	UI.gSizerOrinetation:Add( UI.m_radioBtnRightFront, 0, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxALL, 5 )
-    
-    	UI.m_radioBtnRightRear = wx.wxRadioButton( UI.sbSizerRadioOrientation:GetStaticBox(), wx.wxID_ANY,  " Right / Rear", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
-    	UI.gSizerOrinetation:Add( UI.m_radioBtnRightRear, 0, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxALL, 5 )
-    
-    
-    	UI.sbSizerRadioOrientation:Add( UI.gSizerOrinetation, 1, wx.wxEXPAND, 5 )
-    
-    
-    	UI.gSizerThreeColumn:Add( UI.sbSizerRadioOrientation, 1, wx.wxEXPAND, 5 )
+    	
+    	UI.m_radioBoxOrientChoices = { "Left / Front", "Left / Rear", "Right / Front", "Right / Rear" }
+    	UI.m_radioBoxOrient = wx.wxRadioBox( UI.m_MainPanel, wx.wxID_ANY, "Orientation", wx.wxDefaultPosition, wx.wxSize( 125,-1 ), UI.m_radioBoxOrientChoices, 1, wx.wxRA_SPECIFY_COLS )
+    	UI.m_radioBoxOrient:SetSelection( 0 )
+    	UI.gSizerThreeColumn:Add( UI.m_radioBoxOrient, 0, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxALL, 0 )
     
     	UI.gSizerRadioAction = wx.wxGridSizer( 3, 1, 0, 0 )
     
@@ -863,8 +1002,8 @@ function panelZTouch_1__Script(...)
     	UI.m_buttonCancel = wx.wxButton( UI.m_MainPanel, wx.wxID_ANY, "Cancel", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
     	UI.gSizerRadioAction:Add( UI.m_buttonCancel, 0, wx.wxALL + wx.wxALIGN_CENTER_HORIZONTAL, 5 )
     
-    	UI.m_radioBtnPauseBetweenAxes = wx.wxRadioButton( UI.m_MainPanel, wx.wxID_ANY, "Pause Between Axes", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
-    	UI.gSizerRadioAction:Add( UI.m_radioBtnPauseBetweenAxes, 0, wx.wxALL, 5 )
+    	UI.m_checkBoxPauseBetweenAxes = wx.wxCheckBox( UI.m_MainPanel, wx.wxID_ANY, "Pause Between Axes", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
+    	UI.gSizerRadioAction:Add( UI.m_checkBoxPauseBetweenAxes, 0, wx.wxALL, 5 )
     
     
     	UI.gSizerThreeColumn:Add( UI.gSizerRadioAction, 1, wx.wxALIGN_BOTTOM + wx.wxALIGN_RIGHT, 0 )
@@ -889,6 +1028,7 @@ function panelZTouch_1__Script(...)
     
     	UI.m_radioBtnInches = wx.wxRadioButton( UI.sbSizerRowTwo:GetStaticBox(), wx.wxID_ANY, "Inches", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
     	UI.bSizerRow2:Add( UI.m_radioBtnInches, 0, wx.wxALIGN_CENTER_VERTICAL + wx.wxALL, 5 )
+    	UI.m_radioBtnInches:SetValue(true)
     
     	UI.m_radioBtnMillimeters = wx.wxRadioButton( UI.sbSizerRowTwo:GetStaticBox(), wx.wxID_ANY, "Millimeters", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
     	UI.bSizerRow2:Add( UI.m_radioBtnMillimeters, 0, wx.wxALIGN_CENTER_VERTICAL + wx.wxALL, 5 )
