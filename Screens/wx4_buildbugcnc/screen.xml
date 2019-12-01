@@ -227,7 +227,20 @@ function RefAllHome()
     coroutine.yield() --yield coroutine so we can do the following after motion stops
     ----See ref all home button and plc script for coroutine.create and coroutine.resume
     wx.wxMessageBox('Referencing is complete')
+	SetSoftLimits()
 end
+
+---------------------------------------------------------------
+-- Enable Soft Limits
+---------------------------------------------------------------
+function SetSoftLimits()
+	for v = 0, 5, 1 do -- start, end, increment
+		mc.mcSoftLimitSetState(inst, v, mc.MC_ON)
+	end
+	scr.SetProperty("tbtnSoftLimits", "Button State", tostring(SLState))
+	scr.SetProperty("tbSoftLimits", "Button State", tostring(SLState))
+end
+
 
 ---------------------------------------------------------------
 -- Go To Work Zero() function.
@@ -794,7 +807,7 @@ mc.mcCntlSetLastError(inst, '')</Event>
         <Property name="Enable With Machine">0</Property>
         <Property name="Enabled States">0</Property>
         <Property name="Default Tab">0</Property>
-        <Property name="Current Tab">4</Property>
+        <Property name="Current Tab">0</Property>
         <Property name="Font">0;-11;0;0;0;400;0;0;0;1;0;0;2;32;Arial</Property>
         <Property name="Tab Height">26</Property>
         <Property name="Styles">524544</Property>
@@ -804,7 +817,7 @@ mc.mcCntlSetLastError(inst, '')</Event>
           <Property name="Name">tabFileOps</Property>
           <Property name="Enabled">1</Property>
           <Property name="Hidden">0</Property>
-          <Property name="Shown">0</Property>
+          <Property name="Shown">1</Property>
           <Property name="Label">File Ops</Property>
           <Property name="Bg Color">#E6E6E6</Property>
           <Property name="Background Color">#E6E6E6</Property>
@@ -2615,7 +2628,7 @@ mc.mcProfileWriteString(inst, "PersistentDROs", "droJogRate", string.format (val
           <Property name="Name">tabZTouch(1)</Property>
           <Property name="Enabled">1</Property>
           <Property name="Hidden">0</Property>
-          <Property name="Shown">1</Property>
+          <Property name="Shown">0</Property>
           <Property name="Label">Z-Touch Plate</Property>
           <Property name="Bg Color">#F0F0F0</Property>
           <Property name="Background Color">#F0F0F0</Property>

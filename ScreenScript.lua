@@ -234,7 +234,20 @@ function RefAllHome()
     coroutine.yield() --yield coroutine so we can do the following after motion stops
     ----See ref all home button and plc script for coroutine.create and coroutine.resume
     wx.wxMessageBox('Referencing is complete')
+	SetSoftLimits()
 end
+
+---------------------------------------------------------------
+-- Enable Soft Limits
+---------------------------------------------------------------
+function SetSoftLimits()
+	for v = 0, 5, 1 do -- start, end, increment
+		mc.mcSoftLimitSetState(inst, v, mc.MC_ON)
+	end
+	scr.SetProperty("tbtnSoftLimits", "Button State", tostring(SLState))
+	scr.SetProperty("tbSoftLimits", "Button State", tostring(SLState))
+end
+
 
 ---------------------------------------------------------------
 -- Go To Work Zero() function.
