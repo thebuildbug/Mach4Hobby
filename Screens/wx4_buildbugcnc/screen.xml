@@ -2652,7 +2652,7 @@ mc.mcProfileWriteString(inst, "PersistentDROs", "droJogRate", string.format (val
 require("wx")
 
 -----------------------------------------------------------------------------
--- Machine Constants - Specific to your machine (modify as needed)
+-- Axis Identifier Ids
 -----------------------------------------------------------------------------
 X_AXIS_ID = 0
 Y_AXIS_ID = 1
@@ -2660,44 +2660,72 @@ Z_AXIS_ID = 2
 
 -----------------------------------------------------------------------------
 -- Z Touch Plate Constants - Should NOT need updating unless dimensions change
+-- Duplicated for both Metric and Imperial. Obviously, if you change a value
+-- in one, do the conversion, and change the corresponding value to match.
 -----------------------------------------------------------------------------
-TOUCH_PLATE_HEIGHT = 1                          -- Z Touchplate is 1" (25.4mm) tall
-TOUCH_PLATE_WIDTH  = 2.205                      -- Z Touchplate is 2.205" (56mm) wide
-TOUCH_PLATE_PROBE_AREA = 2                      -- Z Touchplate has 2" (50.8mm) square probing area
-Z_TRAVEL_HEIGHT    = TOUCH_PLATE_HEIGHT +.125	-- How high to lift tool while probing X and Y (inches)
-Z_LIFT_HEIGHT      = TOUCH_PLATE_HEIGHT + .5 	-- How high to lift tool after script is complete (inches)	
-
------------------------------------------------------------------------------
--- Probing Constants
------------------------------------------------------------------------------
-PROBE_FEED_RATE = 10 -- Inches Per Minute (anything from 5-12 will likely work well)
-X_PROBE_DISTANCE = 2 -- How long to probe the X-Axis (inches)
-Y_PROBE_DISTANCE = 2 -- How long to probe the Y-Axis (inches)
-Z_PROBE_DISTANCE = 2 -- How long to probe the Z-Axis (inches)
-
 IMPERIAL_CONSTANTS = {
-	TOUCH_PLATE_HEIGHT     = 1,       -- Z Touchplate is 1" (25.4mm) tall
-    TOUCH_PLATE_WIDTH      = 2.205,   -- Z Touchplate is 2.205" (56mm) wide
-	TOUCH_PLATE_PROBE_AREA = 2,       -- Z Touchplate has 2" (50.8mm) square probing area
-    Z_TRAVEL_HEIGHT        = 1 +.125, -- How high to lift tool while probing X and Y (inches)
-    Z_LIFT_HEIGHT          = 1 + .5,  -- How high to lift tool after script is complete (inches)	
-    PROBE_FEED_RATE        = 10,      -- Inches Per Minute (anything from 5-12 will likely work well)
-    X_PROBE_DISTANCE       = 2,       -- How long to probe the X-Axis (inches)
-    Y_PROBE_DISTANCE       = 2 ,      -- How long to probe the Y-Axis (inches)
-    Z_PROBE_DISTANCE       = 2        -- How long to probe the Z-Axis (inches)
+	TOUCH_PLATE_HEIGHT      = 1,       -- Z Touchplate is 1" (25.4mm) tall
+    TOUCH_PLATE_WIDTH       = 2.205,   -- Z Touchplate is 2.205" (56mm) wide
+	TOUCH_PLATE_PROBE_WIDTH = 2,       -- Z Touchplate has 2" (50.8mm) square probing area
+    Z_TRAVEL_HEIGHT         = 1 +.125, -- How high to lift tool while probing X and Y (inches)
+    Z_LIFT_HEIGHT           = 1 + .5,  -- How high to lift tool after script is complete (inches)	
+    PROBE_FEED_RATE         = 10,      -- Inches Per Minute (anything from 5-12 will likely work well)
+    X_PROBE_DISTANCE        = 2,       -- How long to probe the X-Axis (inches)
+    Y_PROBE_DISTANCE        = 2 ,      -- How long to probe the Y-Axis (inches)
+    Z_PROBE_DISTANCE        = 2        -- How long to probe the Z-Axis (inches)
 }
 
 METRIC_CONSTANTS = {
-	TOUCH_PLATE_HEIGHT     = 25.4,        -- Z Touchplate is 25.4mm (1") tall
-    TOUCH_PLATE_WIDTH      = 56,          -- Z Touchplate is 56mm (2.205") wide
-	TOUCH_PLATE_PROBE_AREA = 50.8,        -- Z Touchplate has 50.8mm (2") square probing area
-    Z_TRAVEL_HEIGHT        = 25.4 + .125, -- How high to lift tool while probing X and Y (mm)
-    Z_LIFT_HEIGHT          = 25.4 + .5,   -- How high to lift tool after script is complete (mm)	
-    PROBE_FEED_RATE        = 254,         -- Inches Per Minute (anything from 254-305 will likely work well)
-    X_PROBE_DISTANCE       = 50.8,        -- Distance to probe the X-Axis (mm)
-    Y_PROBE_DISTANCE       = 50.8,        -- Distance to probe the Y-Axis (mm)
-    Z_PROBE_DISTANCE       = 50.8         -- Distance to probe the Z-Axis (mm)
+	TOUCH_PLATE_HEIGHT      = 25.4,        -- Z Touchplate is 25.4mm (1") tall
+    TOUCH_PLATE_WIDTH       = 56,          -- Z Touchplate is 56mm (2.205") wide
+	TOUCH_PLATE_PROBE_WIDTH = 50.8,        -- Z Touchplate has 50.8mm (2") square probing area
+    Z_TRAVEL_HEIGHT         = 25.4 + .125, -- How high to lift tool while probing X and Y (mm)
+    Z_LIFT_HEIGHT           = 25.4 + .5,   -- How high to lift tool after script is complete (mm)	
+    PROBE_FEED_RATE         = 254,         -- Inches Per Minute (anything from 254-305 will likely work well)
+    X_PROBE_DISTANCE        = 50.8,        -- Distance to probe the X-Axis (mm)
+    Y_PROBE_DISTANCE        = 50.8,        -- Distance to probe the Y-Axis (mm)
+    Z_PROBE_DISTANCE        = 50.8         -- Distance to probe the Z-Axis (mm)
 }
+
+-- Maps the Touchplate Orientation option names with their
+-- position indexes in the wxRadioBox widget that the
+-- user selects. These represent the physical orientation
+-- the touchplate is placed onto the workpiece.
+ORIENTATION = {
+	[0] = "LEFT FRONT",
+	[1] = "LEFT REAR",
+	[2] = "RIGHT FRONT",
+	[3] = "RIGHT REAR" 
+}
+			
+-- Maps position indexes (0-4) of selected Orientation to
+-- the direction the probe should move on the X-Axis
+-- for each touch plate orientation option. The indexes
+-- must match the wxRadioButton and the ORIENTATION map above.
+X_PROBE_DIRECTION = {
+	[0] =  1, -- LEFT FRONT
+	[1] =  1, -- LEFT REAR
+	[2] = -1, -- RIGHT FRONT
+	[3] = -1  -- RIGHT REAR
+}
+
+-- Maps position indexes (0-4) of selected Orientation to
+-- the direction the probe should move on the Y-Axis
+-- for each touch plate orientation option. The indexes
+-- must match the wxRadioButton and the ORIENTATION map above.
+Y_PROBE_DIRECTION = {
+	[0] =  1, -- LEFT FRONT
+	[1] = -1, -- LEFT REAR
+	[2] = -1, -- RIGHT FRONT
+	[3] =  1  -- RIGHT REAR
+}
+
+-- Unit of Measure
+INCHES = 0
+MILLIMETERS = 1
+-- Lookup for unit of measure names
+UNITS = {[INCHES]      = "INCHES",
+	       [MILLIMETERS] = "MILLIMETERS"}
 
 --Global Array to hold all UI elements
 UI = {}
@@ -2708,35 +2736,11 @@ DATA = {}
 -- Global instance of Machine
 INST = mc.mcGetInstance()
 
--- Orientation Radio Button Indexes
--- These match the order they were added to the wxRadioBox widget
-ORIENTATION = { ["LEFT FRONT"]  = 0, 
-				["LEFT REAR"]   = 1, 
-				["RIGHT FRONT"] = 2, 
-				["RIGHT REAR"]  = 3}
-			
-I_ORIENTATION = {[0] = "LEFT FRONT",
-	             [1] = "LEFT REAR",
-				 [2] = "RIGHT FRONT",
-				 [3] = "RIGHT REAR" }
-	
--- Unit of Measure
-INCHES = 0
-MILLIMETERS = 1
-
-UNITS = {["INCHES"] = 0,
-	     ["METRIC"] = 1}
-	
-I_UNITS = {[0] = "INCHES",
-	       [1] = "MILLIMETERS"}
-
 
 function main()
 	
-	-- Get the parent Panel, create the main Frame and Panel  if needed
+	-- Create the main Frame and Panel if we're running in standalone mode.
 	if (mcLuaPanelParent == nil) then
-		-- Create the main Frame and the main Panel.
-		-- (Only used when run outside of Mach4)
 		UI.MainFrame = wx.wxFrame (wx.NULL, 
 			                       wx.wxID_ANY, 
 								   "Z-Touch Plate: Edge Finder Tool",
@@ -2751,7 +2755,8 @@ function main()
 		UI.MainFrame:SetSizeHints( wx.wxDefaultSize, wx.wxDefaultSize )
 		UI.EventHandler = UI.MainFrame:GetEventHandler()
 	else
-		-- The parent already exists so get it's attributes
+		-- The parent already exists (we're running within the
+		-- Mach4 parent screen) so just get the parent attributes
 		UI.m_MainPanel = mcLuaPanelParent
 		local window = UI.m_MainPanel:GetParent()
 		local wsize = window:GetSize()
@@ -2759,15 +2764,13 @@ function main()
 		UI.EventHandler = UI.m_MainPanel:GetEventHandler()
 	end -- if (mcLuaPanelParent == nil)
 	
-	
-	-- Add all UI components to the Z Touchplate Panel.
 	loadWxWidgetComponentsForZTouchplatePanel()
 	
-	-- Bind UI events to their control functions
 	bindUIEvents()
 
 	-- Show the panel just created
 	if (mcLuaPanelParent == nil) then
+		-- Standalone mode
 		UI.MainFrame:SetSizer( UI.bSizerMainFrameOuter )
 		UI.MainFrame:Layout()
 		UI.MainFrame:Centre( wx.wxBOTH )
@@ -2775,23 +2778,67 @@ function main()
         UI.MainFrame:Fit()
         UI.MainFrame:Show(true)
     else
+		-- Running within Mach4 screen
         local window = UI.m_MainPanel:GetParent()
-        window:Connect(wx.wxID_ANY, wx.wxEVT_SIZE,
-        function(event)
-            local wsize = event:GetSize()
-            UI.m_MainPanel:SetSize(wsize)
-            UI.m_MainPanel:FitInside()
-			event:Skip()
-        end)
+        window:Connect(wx.wxID_ANY, 
+			           wx.wxEVT_SIZE,
+					   function(event)
+						   local wsize = event:GetSize()
+						   UI.m_MainPanel:SetSize(wsize)
+						   UI.m_MainPanel:FitInside()
+						   event:Skip()
+					   end)
     end
 	
 end -- END main()
 
+-------------------------------------------------------------------------------
+-- Event Handlers
+-------------------------------------------------------------------------------
+-- Bind functions to the various UI events triggered by the user interacting
+-- with the wxWidget UI components.
+function bindUIEvents()
+	
+	-- Axis CheckBoxes
+	UI.m_MainPanel:Connect(wx.wxID_ANY,
+						   wx.wxID_ANY,
+						   wx.wxEVT_COMMAND_CHECKBOX_CLICKED,
+						   function(event)
+								handleCheckBoxClicked(event)
+						   end)
+	-- Button Click
+	UI.m_MainPanel:Connect(wx.wxID_ANY,
+						   wx.wxID_ANY,
+						   wx.wxEVT_COMMAND_BUTTON_CLICKED,
+						   function(event)
+								handleButtonClicked(event)
+						   end)
+end
 
---[[
-	Main logic for Z-Touch Plate Probing Procedure.
---]]
+
+-- Handle CheckBoxClicked events for entire panel
+function handleCheckBoxClicked(event)
+	local checkBox = event:GetEventObject():DynamicCast("wxCheckBox")
+	local checkBoxLabel = checkBox:GetLabel()
+	if (checkBoxLabel == "Z-Axis") then
+		checkBox:SetValue(true) -- DO NOT ALLOW Z-Axis to be un-selected
+	end
+end
+
+-- Handle ButtonClicked events for entire panel
+function handleButtonClicked(event)
+	local button = event:GetEventObject():DynamicCast("wxButton")
+	local buttonLabel = button:GetLabel()
+	if (buttonLabel == "Run") then
+		runProbingProcedure()
+	end
+end
+
+-------------------------------------------------------------------------------
+-- Z-Touchplate Zeroing Logic
+-------------------------------------------------------------------------------
 function runProbingProcedure()
+	-- Verify the machine is in ready state to proceed.
 	if (mc.mcCntlGetState(INST) ~= mc.MC_STATE_IDLE) then
 		wx.wxMessageBox("Machine must be in idle state to zero Axes.\nEnable or Stop Motion to continue.", "Z-TouchPlate")
 		return
@@ -2805,25 +2852,18 @@ function runProbingProcedure()
 	
 	printUserData()
 	
-	-- Do the actual zeroing
-	autoZeroMachine()
+	-- Do the actual probing motions
+	performProbingProcedure()
 	
 	-- Clear input data
 	clearUserInputData()
-end
+end -- END: runProbingProcedure()
 
 
--- All Machine interactions should be done here
-function autoZeroMachine()
+
+function performProbingProcedure()
 	local curFeedRate =  mc.mcCntlGetFRO(INST) -- Get current feed rate so we can restore it later
-	
-	-- Get constants based on user selection (metric or imperial)
-	local constants = nil
-	if (DATA.unitOfMeasure == INCHES) then
-		constants = IMPERIAL_CONSTANTS
-	elseif (DATA.unitOfMeasure == MILLIMETERS) then
-		constants = METRIC_CONSTANTS
-	end
+	local constants = getConstants()
 	
 	executeGCode("G4 P1")
 	executeGCode("F" .. constants.PROBE_FEED_RATE)
@@ -2842,24 +2882,24 @@ function autoZeroMachine()
 	if (DATA.probeXAxis) then
 		pauseBetweenAxesIfNeeded("X-Axis")
 		local curXPos = mc.mcAxisGetPos(INST, X_AXIS_ID)
-		local newXPos = curXPos + (constants.X_PROBE_DISTANCE * getXProbeDirection())
+		local newXPos = curXPos + (constants.X_PROBE_DISTANCE * X_PROBE_DIRECTION[DATA.orientation])
 		executeGCode(string.format("G31 X%.4f", newXPos))
 		-- TODO SetDro(0,(TouchPlateWidth-ToolRad)*XProbeDirection)
 
 		-- Center tool on the touchplate
-        executeGCode(string.format("G0 X%.4f", ((constants.TOUCH_PLATE_WIDTH/2) - toolRadius) * getXProbeDirection()))
+        executeGCode(string.format("G0 X%.4f", ((constants.TOUCH_PLATE_WIDTH/2) - toolRadius) * X_PROBE_DIRECTION[DATA.orientation]))
 	end
 	
 	-- Probe Y-Axis (if requested)
 	if (DATA.probeYAxis) then
 		pauseBetweenAxesIfNeeded("Y-Axis") 
 		local curYPos = mc.mcAxisGetPos(INST, Y_AXIS_ID)
-		local newYPos = curYPos + (constants.Y_PROBE_DISTANCE * getYProbeDirection())
+		local newYPos = curYPos + (constants.Y_PROBE_DISTANCE * Y_PROBE_DIRECTION[DATA.orientation])
 		executeGCode(string.format("G31 Y%.4f", newYPos))
 		-- TODO SetDro(1,(TouchPlateWidth-ToolRad)*YProbeDirection)
 		
 		-- Center tool on the touchplate
-		executeGCode(string.format("G0 Y%.4f", ((constants.TOUCH_PLATE_WIDTH/2) - toolRadius) * getYProbeDirection()))
+		executeGCode(string.format("G0 Y%.4f", ((constants.TOUCH_PLATE_WIDTH/2) - toolRadius) * Y_PROBE_DIRECTION[DATA.orientation]))
     end
 
 	-- Restore Z-Axis position and original feed rate
@@ -2867,35 +2907,7 @@ function autoZeroMachine()
 	executeGCode("F" .. curFeedRate)
 	
 	wx.wxMessageBox("Auto Tool Sequence Complete.", "Z-TouchPlate")
-end
-
-function getXProbeDirection()
-	local orient = I_ORIENTATION[DATA.orientation]
-    if (orient == "LEFT FRONT") then
-		return 1
-	elseif (orient == "LEFT REAR") then
-		return 1
-	elseif (orient == "RIGHT FRONT") then
-		return -1
-	elseif (orient == "RIGHT REAR") then
-	    return -1
-	end
-end
-
-function getYProbeDirection()
-	local orient = I_ORIENTATION[DATA.orientation]
-    if (orient == "LEFT FRONT") then
-		return 1
-	elseif (orient == "LEFT REAR") then
-		return -1
-	elseif (orient == "RIGHT FRONT") then
-		return -1
-	elseif (orient == "RIGHT REAR") then
-	    return 1
-	end
-end
-
-
+end -- END autoZeroMachine()
 
 function executeGCode(gCodeString)
 	local rc = mc.mcCntlGcodeExecuteWait(INST, gCodeString)
@@ -2906,11 +2918,21 @@ function executeGCode(gCodeString)
 	end
 end
 
-
 function pauseBetweenAxesIfNeeded(axisStr) 
 	if (DATA.pauseBetweenAxes) then
-	    wx.wxMessageBox("Align Tool Flutes for ".. axisStr .. " travel and Press OK", "Z-TouchPlate")
+	    wx.wxMessageBox("Align Tool Flutes for ".. axisStr .. " travel.\n\nPress OK to continue.", "Z-TouchPlate")
 	end
+end
+
+-- Return constants based on user selection (metric or imperial)
+function getConstants()
+	local constants = nil
+	if (DATA.unitOfMeasure == INCHES) then
+		constants = IMPERIAL_CONSTANTS
+	elseif (DATA.unitOfMeasure == MILLIMETERS) then
+		constants = METRIC_CONSTANTS
+	end
+	return constants
 end
 
 -- Assemble the input data the user has entered.
@@ -2959,23 +2981,19 @@ function isUserInputDataValid()
 		return false
 	end
 	
-	local toolDiameterInches = DATA.toolDiameter
-	if (DATA.unitOfMeasure == MILLIMETERS) then
-		toolDiameterInches = DATA.toolDiameter / 25.4
-	end
-	
-	-- ToolDiameter must greater than zero and less than
-	if (toolDiameterInches &lt;= 0) then
+	-- ToolDiameter must greater than zero and less than the width 
+	-- of the probing pad for both metric and imperial.
+	local constants = getConstants()
+	if (DATA.toolDiameter &lt;= 0) then
 		wx.wxMessageBox("Tool Diameter must be greater than zero!", "Z-TouchPlate: Invalid Input", wx.wxICON_ERROR)
 		return false
-	elseif (toolDiameterInches &gt; TOUCH_PLATE_PROBE_AREA) then
+	elseif (DATA.toolDiameter &gt; constants.TOUCH_PLATE_PROBE_WIDTH) then
 		wx.wxMessageBox("Tool Diameter cannot be greater than\nthe Touch Plate probing area!", "Z-TouchPlate: Invalid Input", wx.wxICON_ERROR)
 		return false
 	end
-	
-	return true -- All input is valid
-end
-
+	-- All input is valid
+	return true 
+end -- END isUserInputDataValid()
 
 function clearUserInputData()
 	DATA.probeZAxis = nil
@@ -2987,72 +3005,28 @@ function clearUserInputData()
 	DATA.pauseBetweenAxes= nil
 end
 
+-- Utility Method to help debug user input
 function printUserData()
 	local msg = "---------------------------------------------------\n" ..
-	            "  Z-axis: " .. tostring(DATA.probeZAxis) .. "\n" ..
-	            "  X-axis: " .. tostring(DATA.probeXAxis) .. "\n" ..
-				"  Y-axis: " .. tostring(DATA.probeYAxis) .. "\n" ..
-				"  Orient: " .. I_ORIENTATION[DATA.orientation] .. "\n" ..
-				"Tool Dia: " .. DATA.toolDiameter .. "\n" ..
-				"    Unit: " .. I_UNITS[DATA.unitOfMeasure] .. "\n" ..
-				"   Pause: " .. tostring(DATA.pauseBetweenAxes) .. "\n" ..
+	            "  Z-axis: \t" .. tostring(DATA.probeZAxis) .. "\n" ..
+	            "  X-axis: \t" .. tostring(DATA.probeXAxis) .. "\n" ..
+				"  Y-axis: \t" .. tostring(DATA.probeYAxis) .. "\n" ..
+				"  Orient: \t" .. ORIENTATION[DATA.orientation] .. "\n" ..
+				"Tool Dia: \t" .. DATA.toolDiameter .. "\n" ..
+				"    Unit: \t" .. UNITS[DATA.unitOfMeasure] .. "\n" ..
+				"   Pause: \t" .. tostring(DATA.pauseBetweenAxes) .. "\n" ..
 				"---------------------------------------------------\n"
 			wx.wxMessageBox(msg,"Z-TouchPlate: Debug Info")
 end
 
 -------------------------------------------------------------------------------
--- Event Handlers
+-- wxWidgets UI Components
 -------------------------------------------------------------------------------
--- Bind functions to the various events triggered by the user interacting
--- with the wxWidget UI components.
-function bindUIEvents()
-	
-	-- Axis CheckBoxes
-	UI.m_MainPanel:Connect(wx.wxID_ANY,
-						   wx.wxID_ANY,
-						   wx.wxEVT_COMMAND_CHECKBOX_CLICKED,
-						   function(event)
-								handleCheckBoxClicked(event)
-						   end)
-	-- Button Click
-	UI.m_MainPanel:Connect(wx.wxID_ANY,
-						   wx.wxID_ANY,
-						   wx.wxEVT_COMMAND_BUTTON_CLICKED,
-						   function(event)
-								handleButtonClicked(event)
-						   end)
-end
-
-
--- Handle CheckBoxClicked events for entire panel
-function handleCheckBoxClicked(event)
-	local checkBox = event:GetEventObject():DynamicCast("wxCheckBox")
-	local checkBoxLabel = checkBox:GetLabel()
-	if (checkBoxLabel == "Z-Axis") then
-		checkBox:SetValue(true) -- DO NOT ALLOW Z-Axis to be un-selected
-	end
-end
-
--- Handle ButtonClicked events for entire panel
-function handleButtonClicked(event)
-	local button = event:GetEventObject():DynamicCast("wxButton")
-	local buttonLabel = button:GetLabel()
-	if (buttonLabel == "Run") then
-		runProbingProcedure()
-	end
-end
-
-
--------------------------------------------------------------------------------
--- wxWidgets Components
--------------------------------------------------------------------------------
---[[
 --   The code within this function was generated using wxFormBuilder
 --   and slightly modified to allow us to run the code both within
 --   Mach4 and standalone/debug within ZeroBrane Studio. The only 
 --   difference is that standalone/debug requires us to create the
---   parent frame (which is done outside this function).
---]]
+--   parent frame (which is done above in the Main() function).
 function loadWxWidgetComponentsForZTouchplatePanel()
 
 	UI.bSizerMainFrameOuter = wx.wxBoxSizer( wx.wxVERTICAL )
@@ -7206,7 +7180,7 @@ wait = coroutine.create (RefAllHome) --Run the RefAllHome function as a coroutin
               <Property name="Enabled States">0</Property>
               <Property name="Shape">0</Property>
               <Property name="Square Border">2097152</Property>
-              <Property name="Value">1</Property>
+              <Property name="Value">0</Property>
               <Property name="Color">8</Property>
               <Property name="Scale Method">0</Property>
               <Property name="Type">0</Property>
@@ -19204,7 +19178,7 @@ scr.SetProperty('slideRRO', 'Value', tostring(val));</Event>
         <Property name="Enabled States">0</Property>
         <Property name="Justify">-1</Property>
         <Property name="Border">1</Property>
-        <Property name="Label">VFD reported a fault.</Property>
+        <Property name="Label">PMDX: Mach halted due to Y-- LIMIT switch active</Property>
         <Property name="Lines">1</Property>
         <Property name="Font">0;-15;0;0;0;400;0;0;0;1;0;0;0;32;Arial</Property>
         <Property name="Fg Color">#000000</Property>
