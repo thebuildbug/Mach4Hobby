@@ -751,30 +751,22 @@ function panelZTouch_1__Script(...)
     --              work coordinates for X, Y, and Z axes using the touch plate
     --              as designed.
     -----------------------------------------------------------------------------
-    require("wx")
-    
-    -----------------------------------------------------------------------------
-    -- Axis Identifier Ids
-    -----------------------------------------------------------------------------
-    X_AXIS_ID = 0
-    Y_AXIS_ID = 1
-    Z_AXIS_ID = 2
     
     -----------------------------------------------------------------------------
     -- Z Touch Plate Constants - Should NOT need updating unless dimensions change
     -- Duplicated for both Metric and Imperial. Obviously, if you change a value
-    -- in one, do the conversion, and change the corresponding value to match.
+    -- for one, do the conversion, and change the corresponding value to match.
     -----------------------------------------------------------------------------
     IMPERIAL_CONSTANTS = {
-    	TOUCH_PLATE_HEIGHT      = 1,       -- Z Touchplate is 1" (25.4mm) tall
-        TOUCH_PLATE_WIDTH       = 2.205,   -- Z Touchplate is 2.205" (56mm) wide
-    	TOUCH_PLATE_PROBE_WIDTH = 2,       -- Z Touchplate has 2" (50.8mm) square probing area
-        Z_TRAVEL_HEIGHT         = 1 +.125, -- How high to lift tool while probing X and Y (inches)
-        Z_LIFT_HEIGHT           = 1 + .5,  -- How high to lift tool after script is complete (inches)	
-        PROBE_FEED_RATE         = 10,      -- Inches Per Minute (anything from 5-12 will likely work well)
-        X_PROBE_DISTANCE        = 2,       -- How long to probe the X-Axis (inches)
-        Y_PROBE_DISTANCE        = 2 ,      -- How long to probe the Y-Axis (inches)
-        Z_PROBE_DISTANCE        = 2        -- How long to probe the Z-Axis (inches)
+    	TOUCH_PLATE_HEIGHT      = 1,        -- Z Touchplate is 1" (25.4mm) tall
+        TOUCH_PLATE_WIDTH       = 2.205,    -- Z Touchplate is 2.205" (56mm) wide
+    	TOUCH_PLATE_PROBE_WIDTH = 2,        -- Z Touchplate has 2" (50.8mm) square probing area
+        Z_TRAVEL_HEIGHT         = 1 + .125, -- How high to lift tool while probing X and Y (inches)
+        Z_LIFT_HEIGHT           = 1 + .5,   -- How high to lift tool after script is complete (inches)	
+        PROBE_FEED_RATE         = 10,       -- Inches Per Minute (anything from 5-12 will likely work well)
+        X_PROBE_DISTANCE        = 2,        -- How long to probe the X-Axis (inches)
+        Y_PROBE_DISTANCE        = 2 ,       -- How long to probe the Y-Axis (inches)
+        Z_PROBE_DISTANCE        = 2         -- How long to probe the Z-Axis (inches)
     }
     
     METRIC_CONSTANTS = {
@@ -790,7 +782,7 @@ function panelZTouch_1__Script(...)
     }
     
     -- Maps the Touchplate Orientation option names with their
-    -- position indexes in the wxRadioBox widget that the
+    -- position indexes in the wxRadioBox UI widget that the
     -- user selects. These represent the physical orientation
     -- the touchplate is placed onto the workpiece.
     ORIENTATION = {
@@ -800,10 +792,10 @@ function panelZTouch_1__Script(...)
     	[3] = "RIGHT REAR" 
     }
     			
-    -- Maps position indexes (0-4) of selected Orientation to
+    -- Maps the position indexes (0-3) of selected orientation to
     -- the direction the probe should move on the X-Axis
-    -- for each touch plate orientation option. The indexes
-    -- must match the wxRadioButton and the ORIENTATION map above.
+    -- for each orientation option. The indexes must match the
+    -- ids from the wxRadioButton and the ORIENTATION variable above.
     X_PROBE_DIRECTION = {
     	[0] =  1, -- LEFT FRONT
     	[1] =  1, -- LEFT REAR
@@ -811,10 +803,10 @@ function panelZTouch_1__Script(...)
     	[3] = -1  -- RIGHT REAR
     }
     
-    -- Maps position indexes (0-4) of selected Orientation to
+    -- Maps the position indexes (0-3) of selected orientation to
     -- the direction the probe should move on the Y-Axis
-    -- for each touch plate orientation option. The indexes
-    -- must match the wxRadioButton and the ORIENTATION map above.
+    -- for each orientation option. The indexes must match the
+    -- ids from the wxRadioButton and the ORIENTATION variable above.
     Y_PROBE_DIRECTION = {
     	[0] =  1, -- LEFT FRONT
     	[1] = -1, -- LEFT REAR
@@ -822,12 +814,13 @@ function panelZTouch_1__Script(...)
     	[3] =  1  -- RIGHT REAR
     }
     
-    -- Unit of Measure
+    -- Unit of Measure.
+    -- These need to match the indexes from the wxRadioButton.
     INCHES = 0
     MILLIMETERS = 1
     -- Lookup for unit of measure names
     UNITS = {[INCHES]      = "INCHES",
-    	       [MILLIMETERS] = "MILLIMETERS"}
+    		 [MILLIMETERS] = "MILLIMETERS"}
     
     --Global Array to hold all UI elements
     UI = {}
@@ -952,29 +945,31 @@ function panelZTouch_1__Script(...)
     		return
     	end
     	
-    	printUserData()
+    	-- Show message box - useful for debugging user input
+    	--printUserData()
     	
     	-- Do the actual probing motions
-    	performProbingProcedure()
+    	zeroAllAxes()
     	
     	-- Clear input data
     	clearUserInputData()
     end -- END: runProbingProcedure()
     
     
-    
-    function performProbingProcedure()
+    -- Performs the actual zeroing of the three axes.
+    -- Z-Axis is always zeroed. X and Y are done per user selection.
+    function zeroAllAxes()
     	local curFeedRate =  mc.mcCntlGetFRO(INST) -- Get current feed rate so we can restore it later
-    	local constants = getConstants()
+    	local constants = getConstants() -- either Metric or Imperial as selected by user
     	
     	executeGCode("G4 P1")
     	executeGCode("F" .. constants.PROBE_FEED_RATE)
     	
-    	-- Probe Z-Axis
-    	local curZPos = mc.mcAxisGetPos(INST, Z_AXIS_ID)
+    	-- Probe Z-Axis (always)
+    	local curZPos = mc.mcAxisGetPos(INST, mc.Z_AXIS)
     	local newZPos = curZPos - constants.Z_PROBE_DISTANCE
     	executeGCode(string.format("G31 Z%.4f", newZPos))
-    	-- TODO setDro(2,TouchPlateHeight)
+    	mc.mcAxisSetPos(INST, mc.Z_AXIS, constants.TOUCH_PLATE_HEIGHT)
     	
     	-- Move back up to probe other axes
     	executeGCode(string.format("G0 Z%.4f", constants.Z_TRAVEL_HEIGHT))
@@ -983,11 +978,13 @@ function panelZTouch_1__Script(...)
     	local toolRadius = DATA.toolDiameter / 2
     	if (DATA.probeXAxis) then
     		pauseBetweenAxesIfNeeded("X-Axis")
-    		local curXPos = mc.mcAxisGetPos(INST, X_AXIS_ID)
+    		local curXPos = mc.mcAxisGetPos(INST, mc.X_AXIS)
     		local newXPos = curXPos + (constants.X_PROBE_DISTANCE * X_PROBE_DIRECTION[DATA.orientation])
     		executeGCode(string.format("G31 X%.4f", newXPos))
-    		-- TODO SetDro(0,(TouchPlateWidth-ToolRad)*XProbeDirection)
-    
+    		mc.mcAxisSetPos(INST, 
+    			            mc.X_AXIS, 
+    						(constants.TOUCH_PLATE_WIDTH - toolRadius) * X_PROBE_DIRECTION[DATA.orientation]
+    		)
     		-- Center tool on the touchplate
             executeGCode(string.format("G0 X%.4f", ((constants.TOUCH_PLATE_WIDTH/2) - toolRadius) * X_PROBE_DIRECTION[DATA.orientation]))
     	end
@@ -995,16 +992,18 @@ function panelZTouch_1__Script(...)
     	-- Probe Y-Axis (if requested)
     	if (DATA.probeYAxis) then
     		pauseBetweenAxesIfNeeded("Y-Axis") 
-    		local curYPos = mc.mcAxisGetPos(INST, Y_AXIS_ID)
+    		local curYPos = mc.mcAxisGetPos(INST, mc.Y_AXIS)
     		local newYPos = curYPos + (constants.Y_PROBE_DISTANCE * Y_PROBE_DIRECTION[DATA.orientation])
     		executeGCode(string.format("G31 Y%.4f", newYPos))
-    		-- TODO SetDro(1,(TouchPlateWidth-ToolRad)*YProbeDirection)
-    		
+    		mc.mcAxisSetPos(INST, 
+    			            mc.Y_AXIS, 
+    						(constants.TOUCH_PLATE_WIDTH - toolRadius) * Y_PROBE_DIRECTION[DATA.orientation]
+    		)
     		-- Center tool on the touchplate
     		executeGCode(string.format("G0 Y%.4f", ((constants.TOUCH_PLATE_WIDTH/2) - toolRadius) * Y_PROBE_DIRECTION[DATA.orientation]))
         end
     
-    	-- Restore Z-Axis position and original feed rate
+    	-- Lift Z-Axis and restore original feed rate
     	executeGCode(string.format("G0 Z%.4f", constants.Z_LIFT_HEIGHT))
     	executeGCode("F" .. curFeedRate)
     	
@@ -1084,7 +1083,7 @@ function panelZTouch_1__Script(...)
     	end
     	
     	-- ToolDiameter must greater than zero and less than the width 
-    	-- of the probing pad for both metric and imperial.
+    	-- of the probing pad (handle both metric and imperial cases).
     	local constants = getConstants()
     	if (DATA.toolDiameter <= 0) then
     		wx.wxMessageBox("Tool Diameter must be greater than zero!", "Z-TouchPlate: Invalid Input", wx.wxICON_ERROR)
@@ -1104,7 +1103,7 @@ function panelZTouch_1__Script(...)
         DATA.orientation = nil
     	DATA.toolDiameter = nil
     	DATA.unitOfMeasure = nil
-    	DATA.pauseBetweenAxes= nil
+    	DATA.pauseBetweenAxes = nil
     end
     
     -- Utility Method to help debug user input
@@ -1118,7 +1117,7 @@ function panelZTouch_1__Script(...)
     				"    Unit: \t" .. UNITS[DATA.unitOfMeasure] .. "\n" ..
     				"   Pause: \t" .. tostring(DATA.pauseBetweenAxes) .. "\n" ..
     				"---------------------------------------------------\n"
-    			wx.wxMessageBox(msg,"Z-TouchPlate: Debug Info")
+    	wx.wxMessageBox(msg,"Z-TouchPlate: Debug Info")
     end
     
     -------------------------------------------------------------------------------
