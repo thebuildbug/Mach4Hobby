@@ -473,16 +473,6 @@ if (wait ~= nil) and (machState == 0) then --wait exist and state == idle
 end
 
 -------------------------------------------------------
---  Z-TouchPlate Coroutine resume
--------------------------------------------------------
-if (zTouchPlateCoroutine ~= nil) and (machState == 0) then --zTouchPlateCoroutine exist and state == idle
-	local state = coroutine.status(zTouchPlateCoroutine)
-    if state == "suspended" then --zTouchPlateCoroutine is suspended
-        coroutine.resume(zTouchPlateCoroutine)
-    end
-end
-
--------------------------------------------------------
 --  Cycle time label update
 -------------------------------------------------------
 --Requires a static text box named "CycleTime" on the screen
@@ -807,7 +797,7 @@ mc.mcCntlSetLastError(inst, '')</Event>
         <Property name="Enable With Machine">0</Property>
         <Property name="Enabled States">0</Property>
         <Property name="Default Tab">0</Property>
-        <Property name="Current Tab">4</Property>
+        <Property name="Current Tab">0</Property>
         <Property name="Font">0;-11;0;0;0;400;0;0;0;1;0;0;2;32;Arial</Property>
         <Property name="Tab Height">26</Property>
         <Property name="Styles">524544</Property>
@@ -817,7 +807,7 @@ mc.mcCntlSetLastError(inst, '')</Event>
           <Property name="Name">tabFileOps</Property>
           <Property name="Enabled">1</Property>
           <Property name="Hidden">0</Property>
-          <Property name="Shown">0</Property>
+          <Property name="Shown">1</Property>
           <Property name="Label">File Ops</Property>
           <Property name="Bg Color">#E6E6E6</Property>
           <Property name="Background Color">#E6E6E6</Property>
@@ -2628,7 +2618,7 @@ mc.mcProfileWriteString(inst, "PersistentDROs", "droJogRate", string.format (val
           <Property name="Name">tabZTouch(1)</Property>
           <Property name="Enabled">1</Property>
           <Property name="Hidden">0</Property>
-          <Property name="Shown">1</Property>
+          <Property name="Shown">0</Property>
           <Property name="Label">Z-Touch Plate</Property>
           <Property name="Bg Color">#F0F0F0</Property>
           <Property name="Background Color">#F0F0F0</Property>

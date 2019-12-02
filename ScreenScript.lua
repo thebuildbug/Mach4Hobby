@@ -467,16 +467,6 @@ function Mach_PLC_Script()
     end
     
     -------------------------------------------------------
-    --  Z-TouchPlate Coroutine resume
-    -------------------------------------------------------
-    if (zTouchPlateCoroutine ~= nil) and (machState == 0) then --zTouchPlateCoroutine exist and state == idle
-    	local state = coroutine.status(zTouchPlateCoroutine)
-        if state == "suspended" then --zTouchPlateCoroutine is suspended
-            coroutine.resume(zTouchPlateCoroutine)
-        end
-    end
-    
-    -------------------------------------------------------
     --  Cycle time label update
     -------------------------------------------------------
     --Requires a static text box named "CycleTime" on the screen
