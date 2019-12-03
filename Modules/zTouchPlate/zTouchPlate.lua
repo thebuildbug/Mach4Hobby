@@ -231,7 +231,7 @@ function zeroAllAxes()
 	local curFeedRate =  mc.mcCntlGetFRO(INST) -- Get current feed rate so we can restore it later
 	local constants = getConstants() -- either Metric or Imperial as selected by user
 	
-	executeGCode("G4 P1")
+	executeGCode("G4 P1.")  -- The . makes this 1 second, without it the dwell would be 1 millisecond
 	executeGCode("F" .. constants.PROBE_FEED_RATE)
 	
 	-- Probe Z-Axis (always)
