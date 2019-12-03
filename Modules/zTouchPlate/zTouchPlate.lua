@@ -35,8 +35,8 @@ local METRIC_CONSTANTS = {
 	TOUCH_PLATE_HEIGHT      = 25.4,        -- Z Touchplate is 25.4mm (1") tall
     TOUCH_PLATE_WIDTH       = 56,          -- Z Touchplate is 56mm (2.205") wide
 	TOUCH_PLATE_PROBE_WIDTH = 50.8,        -- Z Touchplate has 50.8mm (2") square probing area
-    Z_TRAVEL_HEIGHT         = 25.4 + .125, -- How high to lift tool while probing X and Y (mm)
-    Z_LIFT_HEIGHT           = 25.4 + .5,   -- How high to lift tool after script is complete (mm)	
+    Z_TRAVEL_HEIGHT         = 25.4 + 3.175,-- How high to lift tool while probing X and Y (mm)
+    Z_LIFT_HEIGHT           = 25.4 + 12.7, -- How high to lift tool after script is complete (mm)	
     PROBE_FEED_RATE         = 254,         -- Inches Per Minute (anything from 254-305 will likely work well)
     X_PROBE_DISTANCE        = 50.8,        -- Distance to probe the X-Axis (mm)
     Y_PROBE_DISTANCE        = 50.8,        -- Distance to probe the Y-Axis (mm)
@@ -195,6 +195,13 @@ end
 -- Z-Touchplate Zeroing Logic
 -----------------------------------------------------------------------------
 function runProbingProcedure()
+	-- Verify the machine is enabled
+	local isEnabled = mc.mcSignalGetState(mc.mcSignalGetHandle(INST, mc.OSIG_MACHINE_ENABLED))
+	if (isEnabled ~= 1) then
+		wx.wxMessageBox("Machine must be enabled to zero axes.\n\nEnable motion and try again.", "Z-TouchPlate")
+		return
+	end
+	
 	-- Verify the machine is in ready state to proceed.
 	if (mc.mcCntlGetState(INST) ~= mc.MC_STATE_IDLE) then
 		wx.wxMessageBox("Machine must be in idle state to zero Axes.\nEnable or Stop Motion to continue.", "Z-TouchPlate")
