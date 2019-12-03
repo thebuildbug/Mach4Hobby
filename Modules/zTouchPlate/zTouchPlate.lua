@@ -248,7 +248,7 @@ function zeroAllAxes()
 						(constants.TOUCH_PLATE_WIDTH - toolRadius) * X_PROBE_DIRECTION[DATA.orientation]
 		)
 		-- Center tool on the touchplate
-        executeGCode(string.format("G0 X%.4f", ((constants.TOUCH_PLATE_WIDTH/2) - toolRadius) * X_PROBE_DIRECTION[DATA.orientation]))
+        executeGCode(string.format("G0 X%.4f", (constants.TOUCH_PLATE_WIDTH/2) * X_PROBE_DIRECTION[DATA.orientation]))
 	end
 	
 	-- Probe Y-Axis (if requested)
@@ -262,7 +262,7 @@ function zeroAllAxes()
 						(constants.TOUCH_PLATE_WIDTH - toolRadius) * Y_PROBE_DIRECTION[DATA.orientation]
 		)
 		-- Center tool on the touchplate
-		executeGCode(string.format("G0 Y%.4f", ((constants.TOUCH_PLATE_WIDTH/2) - toolRadius) * Y_PROBE_DIRECTION[DATA.orientation]))
+		executeGCode(string.format("G0 Y%.4f", (constants.TOUCH_PLATE_WIDTH/2) * Y_PROBE_DIRECTION[DATA.orientation]))
     end
 
 	-- Lift Z-Axis and restore original feed rate
