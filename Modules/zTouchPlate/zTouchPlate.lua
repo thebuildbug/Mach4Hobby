@@ -218,17 +218,12 @@ function runProbingProcedure()
 	-- Show message box - useful for debugging user input
 	--printUserData()
 	
-	-- Disable the UI from user input
-	UI.m_MainPanel:Enable(false)
-	
 	-- Do the actual probing motions
 	zeroAllAxes()
 	
 	-- Clear input data
 	clearUserInputData()
 	
-	-- RE-enable UI
-	UI.m_MainPanel:Enable(true)
 end -- END: runProbingProcedure()
 
 
