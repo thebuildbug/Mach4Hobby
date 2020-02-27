@@ -77,7 +77,6 @@ end,
     end
 end
 
-
 ----M6 messagebox
 --[mc.OSIG_TOOL_CHANGE] = function (state)
 --    local selectedtool = mc.mcToolGetSelected(inst)
@@ -797,7 +796,7 @@ mc.mcCntlSetLastError(inst, '')</Event>
         <Property name="Enable With Machine">0</Property>
         <Property name="Enabled States">0</Property>
         <Property name="Default Tab">0</Property>
-        <Property name="Current Tab">4</Property>
+        <Property name="Current Tab">0</Property>
         <Property name="Font">0;-11;0;0;0;400;0;0;0;1;0;0;2;32;Arial</Property>
         <Property name="Tab Height">26</Property>
         <Property name="Styles">524544</Property>
@@ -807,7 +806,7 @@ mc.mcCntlSetLastError(inst, '')</Event>
           <Property name="Name">tabFileOps</Property>
           <Property name="Enabled">1</Property>
           <Property name="Hidden">0</Property>
-          <Property name="Shown">0</Property>
+          <Property name="Shown">1</Property>
           <Property name="Label">File Ops</Property>
           <Property name="Bg Color">#E6E6E6</Property>
           <Property name="Background Color">#E6E6E6</Property>
@@ -1282,7 +1281,7 @@ mc.mcCntlSetLastError(inst, '')</Event>
             <Property name="Enabled States">0</Property>
             <Property name="Justify">-1</Property>
             <Property name="Border">0</Property>
-            <Property name="Label">00:00:0.86</Property>
+            <Property name="Label">00:00:1.50</Property>
             <Property name="Lines">1</Property>
             <Property name="Font">0;-9;0;0;0;400;0;0;0;1;0;0;2;32;Arial</Property>
             <Property name="Fg Color">#000000</Property>
@@ -2618,7 +2617,7 @@ mc.mcProfileWriteString(inst, "PersistentDROs", "droJogRate", string.format (val
           <Property name="Name">tabZTouch(1)</Property>
           <Property name="Enabled">1</Property>
           <Property name="Hidden">0</Property>
-          <Property name="Shown">1</Property>
+          <Property name="Shown">0</Property>
           <Property name="Label">Z-Touch Plate</Property>
           <Property name="Bg Color">#F0F0F0</Property>
           <Property name="Background Color">#F0F0F0</Property>
@@ -2646,7 +2645,7 @@ local profile = mc.mcProfileGetName(inst)
 local path = mc.mcCntlGetMachDir(inst)
 package.path = path .. "\\Modules\\zTouchPlate\\?.lua;"
 package.loaded.zTouchPlate = nil
-ztp = require "zTouchPlate"
+local ztp = require "zTouchPlate"
 
 -- Load UI and code to implement this panel
 ztp.create()</Event>
@@ -2858,7 +2857,7 @@ wait = coroutine.create (RefAllHome) --Run the RefAllHome function as a coroutin
                 <Property name="Register"></Property>
                 <Property name="SysVar">0</Property>
                 <Property name="SysParam">0</Property>
-                <Property name="Value">-55.500000</Property>
+                <Property name="Value">0.000000</Property>
                 <Property name="Format">%4.4f</Property>
                 <Property name="Editor">1</Property>
                 <Property name="Justify">1</Property>
@@ -2941,7 +2940,7 @@ wait = coroutine.create (RefAllHome) --Run the RefAllHome function as a coroutin
                 <Property name="Register"></Property>
                 <Property name="SysVar">0</Property>
                 <Property name="SysParam">0</Property>
-                <Property name="Value">1.705000</Property>
+                <Property name="Value">0.000000</Property>
                 <Property name="Format">%4.4f</Property>
                 <Property name="Editor">2</Property>
                 <Property name="Justify">1</Property>
@@ -3024,7 +3023,7 @@ wait = coroutine.create (RefAllHome) --Run the RefAllHome function as a coroutin
                 <Property name="Register"></Property>
                 <Property name="SysVar">0</Property>
                 <Property name="SysParam">0</Property>
-                <Property name="Value">1.000000</Property>
+                <Property name="Value">0.000000</Property>
                 <Property name="Format">%4.4f</Property>
                 <Property name="Editor">0</Property>
                 <Property name="Justify">1</Property>
@@ -3958,7 +3957,7 @@ mc.mcAxisDerefAll(inst);</Event>
             <Property name="Register"></Property>
             <Property name="SysVar">0</Property>
             <Property name="SysParam">0</Property>
-            <Property name="Value">-55.500000</Property>
+            <Property name="Value">0.000000</Property>
             <Property name="Format">%4.4f</Property>
             <Property name="Editor">0</Property>
             <Property name="Justify">1</Property>
@@ -4016,7 +4015,7 @@ mc.mcAxisDerefAll(inst);</Event>
             <Property name="Register"></Property>
             <Property name="SysVar">0</Property>
             <Property name="SysParam">0</Property>
-            <Property name="Value">1.705000</Property>
+            <Property name="Value">0.000000</Property>
             <Property name="Format">%4.4f</Property>
             <Property name="Editor">0</Property>
             <Property name="Justify">1</Property>
@@ -4074,7 +4073,7 @@ mc.mcAxisDerefAll(inst);</Event>
             <Property name="Register"></Property>
             <Property name="SysVar">0</Property>
             <Property name="SysParam">0</Property>
-            <Property name="Value">1.000000</Property>
+            <Property name="Value">0.000000</Property>
             <Property name="Format">%4.4f</Property>
             <Property name="Editor">0</Property>
             <Property name="Justify">1</Property>
@@ -5376,7 +5375,7 @@ wait = coroutine.create (RefAllHome) --Run the RefAllHome function as a coroutin
               <Property name="Register"></Property>
               <Property name="SysVar">0</Property>
               <Property name="SysParam">0</Property>
-              <Property name="Value">-55.500000</Property>
+              <Property name="Value">0.000000</Property>
               <Property name="Format">%+.3f</Property>
               <Property name="Editor">0</Property>
               <Property name="Justify">1</Property>
@@ -5442,7 +5441,7 @@ wait = coroutine.create (RefAllHome) --Run the RefAllHome function as a coroutin
               <Property name="Register"></Property>
               <Property name="SysVar">0</Property>
               <Property name="SysParam">0</Property>
-              <Property name="Value">55.500000</Property>
+              <Property name="Value">0.000000</Property>
               <Property name="Format">%+.3f</Property>
               <Property name="Editor">0</Property>
               <Property name="Justify">1</Property>
@@ -5607,7 +5606,7 @@ wait = coroutine.create (RefAllHome) --Run the RefAllHome function as a coroutin
               <Property name="Register"></Property>
               <Property name="SysVar">0</Property>
               <Property name="SysParam">0</Property>
-              <Property name="Value">1.705000</Property>
+              <Property name="Value">0.000000</Property>
               <Property name="Format">%+.3f</Property>
               <Property name="Editor">0</Property>
               <Property name="Justify">1</Property>
@@ -5673,7 +5672,7 @@ wait = coroutine.create (RefAllHome) --Run the RefAllHome function as a coroutin
               <Property name="Register"></Property>
               <Property name="SysVar">0</Property>
               <Property name="SysParam">0</Property>
-              <Property name="Value">-1.705000</Property>
+              <Property name="Value">0.000000</Property>
               <Property name="Format">%+.3f</Property>
               <Property name="Editor">0</Property>
               <Property name="Justify">1</Property>
@@ -5838,7 +5837,7 @@ wait = coroutine.create (RefAllHome) --Run the RefAllHome function as a coroutin
               <Property name="Register"></Property>
               <Property name="SysVar">0</Property>
               <Property name="SysParam">0</Property>
-              <Property name="Value">1.000000</Property>
+              <Property name="Value">0.000000</Property>
               <Property name="Format">%+.3f</Property>
               <Property name="Editor">0</Property>
               <Property name="Justify">1</Property>
@@ -5904,7 +5903,7 @@ wait = coroutine.create (RefAllHome) --Run the RefAllHome function as a coroutin
               <Property name="Register"></Property>
               <Property name="SysVar">0</Property>
               <Property name="SysParam">0</Property>
-              <Property name="Value">-1.000000</Property>
+              <Property name="Value">0.000000</Property>
               <Property name="Format">%+.3f</Property>
               <Property name="Editor">0</Property>
               <Property name="Justify">1</Property>
@@ -16214,7 +16213,7 @@ mc.mcCntlSetLastError(inst, string.format("X Offset Set: %.4f | Y Offset Set: %.
             <Property name="Register"></Property>
             <Property name="SysVar">0</Property>
             <Property name="SysParam">0</Property>
-            <Property name="Value">-55.500000</Property>
+            <Property name="Value">0.000000</Property>
             <Property name="Format">%.4f</Property>
             <Property name="Editor">0</Property>
             <Property name="Justify">0</Property>
@@ -16247,7 +16246,7 @@ mc.mcCntlSetLastError(inst, string.format("X Offset Set: %.4f | Y Offset Set: %.
             <Property name="Register"></Property>
             <Property name="SysVar">0</Property>
             <Property name="SysParam">0</Property>
-            <Property name="Value">1.705000</Property>
+            <Property name="Value">0.000000</Property>
             <Property name="Format">%.4f</Property>
             <Property name="Editor">0</Property>
             <Property name="Justify">0</Property>
@@ -16280,7 +16279,7 @@ mc.mcCntlSetLastError(inst, string.format("X Offset Set: %.4f | Y Offset Set: %.
             <Property name="Register"></Property>
             <Property name="SysVar">0</Property>
             <Property name="SysParam">0</Property>
-            <Property name="Value">1.000000</Property>
+            <Property name="Value">0.000000</Property>
             <Property name="Format">%.4f</Property>
             <Property name="Editor">0</Property>
             <Property name="Justify">0</Property>
@@ -18367,53 +18366,6 @@ scr.SetProperty('slideSRO', 'Value', tostring(val));</Event>
           <Event name="Goto Page"></Event>
           <Event name="Run MDI"></Event>
         </mcButton>
-        <mcStaticText>
-          <Property name="Name">lblSpindleCooling(215)</Property>
-          <Property name="Instance">0</Property>
-          <Property name="Top">150</Property>
-          <Property name="Left">100</Property>
-          <Property name="Height">38</Property>
-          <Property name="Width">51</Property>
-          <Property name="Enabled">1</Property>
-          <Property name="Hidden">0</Property>
-          <Property name="Shown">1</Property>
-          <Property name="Enable With Machine">0</Property>
-          <Property name="Enabled States">0</Property>
-          <Property name="Justify">-1</Property>
-          <Property name="Border">0</Property>
-          <Property name="Label">Spindle\nCoolant</Property>
-          <Property name="Lines"></Property>
-          <Property name="Font">0;-12;0;0;0;400;0;0;0;0;3;2;1;34;Segoe UI</Property>
-          <Property name="Fg Color">#000000</Property>
-          <Property name="Bg Color"></Property>
-          <Property name="Label Code">-1</Property>
-          <Property name="Register"></Property>
-          <Property name="SysVar">0</Property>
-          <Property name="SysParam">0</Property>
-          <Event name="On Update Script"></Event>
-        </mcStaticText>
-        <mcLed>
-          <Property name="Name">ledSpindleCooling(105)</Property>
-          <Property name="Instance">0</Property>
-          <Property name="Top">154</Property>
-          <Property name="Left">76</Property>
-          <Property name="Height">20</Property>
-          <Property name="Width">20</Property>
-          <Property name="Enabled">1</Property>
-          <Property name="Hidden">0</Property>
-          <Property name="Shown">1</Property>
-          <Property name="Enable With Machine">0</Property>
-          <Property name="Enabled States">0</Property>
-          <Property name="Shape">0</Property>
-          <Property name="Square Border">2097152</Property>
-          <Property name="Value">0</Property>
-          <Property name="Color">9</Property>
-          <Property name="Scale Method">0</Property>
-          <Property name="Type">0</Property>
-          <Property name="Blink Rate">500</Property>
-          <Property name="Input Signal">-1</Property>
-          <Property name="Output Signal">1141</Property>
-        </mcLed>
       </mcGroup>
       <mcGroup>
         <Property name="Name">grpRapid Rate</Property>
@@ -18642,9 +18594,9 @@ scr.SetProperty('slideRRO', 'Value', tostring(val));</Event>
         <Property name="Name">lblModals</Property>
         <Property name="Instance">0</Property>
         <Property name="Top">717</Property>
-        <Property name="Left">2</Property>
+        <Property name="Left">5</Property>
         <Property name="Height">25</Property>
-        <Property name="Width">1018</Property>
+        <Property name="Width">1015</Property>
         <Property name="Enabled">1</Property>
         <Property name="Hidden">0</Property>
         <Property name="Shown">1</Property>
