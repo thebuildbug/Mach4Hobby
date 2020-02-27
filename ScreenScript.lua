@@ -84,7 +84,6 @@ end,
     end
 end
 
-
 ----M6 messagebox
 --[mc.OSIG_TOOL_CHANGE] = function (state)
 --    local selectedtool = mc.mcToolGetSelected(inst)
@@ -735,7 +734,7 @@ function panelZTouch_1__Script(...)
     local path = mc.mcCntlGetMachDir(inst)
     package.path = path .. "\\Modules\\zTouchPlate\\?.lua;"
     package.loaded.zTouchPlate = nil
-    ztp = require "zTouchPlate"
+    local ztp = require "zTouchPlate"
     
     -- Load UI and code to implement this panel
     ztp.create()
