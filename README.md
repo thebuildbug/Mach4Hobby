@@ -49,7 +49,7 @@ Complete the following steps to add the Z-Touch Plate UI to your Mach4 instance.
   local path = mc.mcCntlGetMachDir(inst)
   package.path = path .. "\\Modules\\zTouchPlate\\?.lua;"
   package.loaded.zTouchPlate = nil
-  ztp = require "zTouchPlate"
+  local ztp = require "zTouchPlate"
   
   -- Load UI and code to implement this panel
   ztp.create()
