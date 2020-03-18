@@ -82,6 +82,13 @@ end,
         scr.SetProperty('txtJogInc', 'Fg Color', '#808080');--Dark Grey
         --add the bits to grey jog buttons becasue buttons can't be MPGs
     end
+end,
+
+[mc.OSIG_SPINDLEON] = function (state)
+	if (state == 1) then
+		local hSigOutput0, rc = mc.mcSignalGetHandle(inst, mc.OSIG_OUTPUT0);
+		mc.mcSignalSetState(hSigOutput0, true);
+	end
 end
 
 ----M6 messagebox
