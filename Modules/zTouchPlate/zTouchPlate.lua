@@ -190,9 +190,15 @@ function handleButtonClicked(event)
 	local button = event:GetEventObject():DynamicCast("wxButton")
 	local buttonLabel = button:GetLabel()
 	if (buttonLabel == RUN_BUTTON_TEXT) then
+		UI.m_buttonRun:Enable(false)
 		appendStatus("<START>")
-		runProbingProcedure()
+		--runProbingProcedure()
+		local fnSuccess, fnError = pcall(runProbingProcedure)
+		if (fnSuccess ~= true) then
+			appendStatus("Runtime Error: ".. fnError)
+		end
 		appendStatus("<END>")
+		UI.m_buttonRun:Enable(true)
 	elseif (buttonLabel == CANCEL_BUTTON_TEXT) then
 		cancelProbingProcedure()
 	elseif (buttonLabel == CLEAR_STATUS_BUTTON_TEXT) then
