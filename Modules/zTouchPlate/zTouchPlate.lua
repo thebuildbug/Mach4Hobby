@@ -102,7 +102,7 @@ function zTouchPlate.create()
 			                       wx.wxID_ANY, 
 								   "Z-Touch Plate: Edge Finder Tool",
 								   wx.wxDefaultPosition,
-								   wx.wxSize(425,220), 
+								   wx.wxSize(-1,-1), 
 								   wx.wxDEFAULT_FRAME_STYLE+wx.wxTAB_TRAVERSAL )
 		UI.m_MainPanel = wx.wxPanel( UI.MainFrame, 
 			                         wx.wxID_ANY, 
@@ -118,6 +118,7 @@ function zTouchPlate.create()
 		local window = UI.m_MainPanel:GetParent()
 		local wsize = window:GetSize()
 		UI.m_MainPanel:SetSize(wsize)
+		--UI.m_MainPanel:SetSize(700,500)
 		UI.EventHandler = UI.m_MainPanel:GetEventHandler()
 	end -- if (mcLuaPanelParent == nil)
 	
@@ -128,7 +129,7 @@ function zTouchPlate.create()
 	-- Show the panel just created
 	if (mcLuaPanelParent == nil) then
 		-- Standalone mode
-		UI.MainFrame:SetSizer( UI.bSizerMainFrameOuter )
+		UI.MainFrame:SetSizer( UI.bSizerMain )
 		UI.MainFrame:Layout()
 		UI.MainFrame:Centre( wx.wxBOTH )
         UI.m_MainPanel:Fit()
@@ -400,10 +401,10 @@ end
 --   difference is that standalone/debug requires us to create the
 --   parent frame (which is done above in the Main() function).
 function loadWxWidgetComponentsForZTouchplatePanel()
+	
+    UI.bSizerMain = wx.wxBoxSizer( wx.wxVERTICAL )
 
-	UI.bSizerMainFrameOuter = wx.wxBoxSizer( wx.wxVERTICAL )
-
-	UI.bSizerMainFrameInner = wx.wxBoxSizer( wx.wxVERTICAL )
+	UI.bSizerInner = wx.wxBoxSizer( wx.wxVERTICAL )
 
 	UI.fgSizerMain = wx.wxFlexGridSizer( 2, 1, 0, 0 )
 	UI.fgSizerMain:SetFlexibleDirection( wx.wxVERTICAL )
@@ -411,14 +412,15 @@ function loadWxWidgetComponentsForZTouchplatePanel()
 
 	UI.bSizerRowOne = wx.wxBoxSizer( wx.wxVERTICAL )
 
-	UI.gSizerThreeColumn = wx.wxGridSizer( 1, 3, 0, 0 )
+	UI.gSizerThreeColumn = wx.wxGridSizer( 1, 4, 0, 0 )
 
 	UI.sbSizerAxes = wx.wxStaticBoxSizer( wx.wxStaticBox( UI.m_MainPanel, wx.wxID_ANY, "Axes" ), wx.wxVERTICAL )
 
 	UI.gSizerRadioAxes = wx.wxGridSizer( 3, 1, 0, 0 )
-	
+
 	UI.m_checkBoxZAxis = wx.wxCheckBox( UI.sbSizerAxes:GetStaticBox(), wx.wxID_ANY, "Z-Axis", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
 	UI.m_checkBoxZAxis:SetValue(true)
+	UI.m_checkBoxZAxis:Enable(false)
 
 	UI.gSizerRadioAxes:Add( UI.m_checkBoxZAxis, 0, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxALL, 5 )
 
@@ -428,50 +430,27 @@ function loadWxWidgetComponentsForZTouchplatePanel()
 	UI.m_checkBoxYAxis = wx.wxCheckBox( UI.sbSizerAxes:GetStaticBox(), wx.wxID_ANY, "Y-Axis", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
 	UI.gSizerRadioAxes:Add( UI.m_checkBoxYAxis, 0, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxALL, 5 )
 
-	UI.sbSizerAxes:Add( UI.gSizerRadioAxes, 1, wx.wxEXPAND, 0 )
+
+	UI.sbSizerAxes:Add( UI.gSizerRadioAxes, 1, wx.wxALIGN_CENTER_HORIZONTAL, 0 )
 
 
 	UI.gSizerThreeColumn:Add( UI.sbSizerAxes, 1, wx.wxEXPAND, 0 )
 
-	UI.gSizerOrinetation = wx.wxGridSizer( 4, 1, 0, 0 )
-	
 	UI.m_radioBoxOrientChoices = { "Left / Front", "Left / Rear", "Right / Front", "Right / Rear" }
 	UI.m_radioBoxOrient = wx.wxRadioBox( UI.m_MainPanel, wx.wxID_ANY, "Orientation", wx.wxDefaultPosition, wx.wxSize( 125,-1 ), UI.m_radioBoxOrientChoices, 1, wx.wxRA_SPECIFY_COLS )
-	UI.m_radioBoxOrient:SetSelection( 0 )
-	UI.gSizerThreeColumn:Add( UI.m_radioBoxOrient, 0, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxALL, 0 )
-
-    UI.gSizerAction = wx.wxGridSizer( 2, 1, 20, 0 )
-
-	UI.m_buttonRun = wx.wxButton( UI.m_MainPanel, wx.wxID_ANY, ACTION_BUTTON_TEXT, wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
-	UI.gSizerAction:Add( UI.m_buttonRun, 0, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxALIGN_TOP + wx.wxALL, 5 )
-
-	UI.m_checkBoxPauseBetweenAxes = wx.wxCheckBox( UI.m_MainPanel, wx.wxID_ANY, "Pause Between Axes", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
-	UI.gSizerAction:Add( UI.m_checkBoxPauseBetweenAxes, 0, wx.wxALL, 5 )
-
-
-	UI.gSizerThreeColumn:Add( UI.gSizerAction, 1, wx.wxALIGN_BOTTOM + wx.wxALIGN_RIGHT, 0 )
-
-
-	UI.bSizerRowOne:Add( UI.gSizerThreeColumn, 1, wx.wxALL + wx.wxEXPAND, 0 )
-
-
-	UI.fgSizerMain:Add( UI.bSizerRowOne, 1, wx.wxALIGN_CENTER_HORIZONTAL, 0 )
+	UI.m_radioBoxOrient:SetSelection( 1 )
+	UI.gSizerThreeColumn:Add( UI.m_radioBoxOrient, 0, wx.wxALIGN_CENTER_HORIZONTAL, 0 )
 
 	UI.sbSizerRowTwo = wx.wxStaticBoxSizer( wx.wxStaticBox( UI.m_MainPanel, wx.wxID_ANY, "Tool Diameter" ), wx.wxVERTICAL )
 
-	UI.bSizerRow2 = wx.wxBoxSizer( wx.wxHORIZONTAL )
-
-	UI.m_staticTextToolDiameter = wx.wxStaticText( UI.sbSizerRowTwo:GetStaticBox(), wx.wxID_ANY, "Tool Diameter:", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
-	UI.m_staticTextToolDiameter:Wrap( -1 )
-
-	UI.bSizerRow2:Add( UI.m_staticTextToolDiameter, 0, wx.wxALIGN_CENTER_VERTICAL + wx.wxALL, 5 )
+	UI.bSizerRow2 = wx.wxBoxSizer( wx.wxVERTICAL )
 
 	UI.m_textCtrlToolDiameter = wx.wxTextCtrl( UI.sbSizerRowTwo:GetStaticBox(), wx.wxID_ANY, "0", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
 	UI.bSizerRow2:Add( UI.m_textCtrlToolDiameter, 0, wx.wxALIGN_CENTER_VERTICAL + wx.wxALL, 5 )
 
 	UI.m_radioBtnInches = wx.wxRadioButton( UI.sbSizerRowTwo:GetStaticBox(), wx.wxID_ANY, "Inches", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
-	UI.bSizerRow2:Add( UI.m_radioBtnInches, 0, wx.wxALIGN_CENTER_VERTICAL + wx.wxALL, 5 )
 	UI.m_radioBtnInches:SetValue(true)
+	UI.bSizerRow2:Add( UI.m_radioBtnInches, 0, wx.wxALIGN_CENTER_VERTICAL + wx.wxALL, 5 )
 
 	UI.m_radioBtnMillimeters = wx.wxRadioButton( UI.sbSizerRowTwo:GetStaticBox(), wx.wxID_ANY, "Millimeters", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
 	UI.bSizerRow2:Add( UI.m_radioBtnMillimeters, 0, wx.wxALIGN_CENTER_VERTICAL + wx.wxALL, 5 )
@@ -480,16 +459,48 @@ function loadWxWidgetComponentsForZTouchplatePanel()
 	UI.sbSizerRowTwo:Add( UI.bSizerRow2, 1, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxALIGN_TOP, 0 )
 
 
-	UI.fgSizerMain:Add( UI.sbSizerRowTwo, 1, wx.wxEXPAND, 5 )
+	UI.gSizerThreeColumn:Add( UI.sbSizerRowTwo, 1, wx.wxEXPAND, 5 )
+
+	UI.gSizerAction = wx.wxGridSizer( 2, 1, 5, 0 )
+
+	UI.m_buttonRun = wx.wxButton( UI.m_MainPanel, wx.wxID_ANY, "Run", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
+	UI.gSizerAction:Add( UI.m_buttonRun, 0, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxTOP, 10 )
+
+	UI.m_buttonCancel = wx.wxButton( UI.m_MainPanel, wx.wxID_ANY, "Cancel", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
+	UI.gSizerAction:Add( UI.m_buttonCancel, 0, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxLEFT, 0 )
+
+	UI.m_checkBoxPauseBetweenAxes = wx.wxCheckBox( UI.m_MainPanel, wx.wxID_ANY, "Pause Between Axes", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
+	UI.gSizerAction:Add( UI.m_checkBoxPauseBetweenAxes, 0, wx.wxALL, 5 )
 
 
-	UI.m_MainPanel:SetSizer( UI.fgSizerMain )
+	UI.gSizerThreeColumn:Add( UI.gSizerAction, 1, 0, 0 )
+
+
+	UI.bSizerRowOne:Add( UI.gSizerThreeColumn, 1, wx.wxALL + wx.wxEXPAND, 0 )
+
+
+	UI.fgSizerMain:Add( UI.bSizerRowOne, 1, wx.wxALIGN_CENTER_HORIZONTAL, 0 )
+
+	UI.sbSizerRowThree = wx.wxStaticBoxSizer( wx.wxStaticBox( UI.m_MainPanel, wx.wxID_ANY, "Status" ), wx.wxHORIZONTAL )
+
+	UI.m_textCtrlStatusLine = wx.wxTextCtrl( UI.sbSizerRowThree:GetStaticBox(), wx.wxID_ANY, "", wx.wxDefaultPosition, wx.wxSize( 460,80 ), wx.wxTE_READONLY )
+	UI.sbSizerRowThree:Add( UI.m_textCtrlStatusLine, 0, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxALL + wx.wxEXPAND, 5 )
+
+	UI.m_buttonClear = wx.wxButton( UI.sbSizerRowThree:GetStaticBox(), wx.wxID_ANY, "Clear", wx.wxPoint( -1,-1 ), wx.wxSize( 50,-1 ), 0 )
+	UI.m_buttonClear:SetToolTip( "Click to clear the text in the status line." )
+
+	UI.sbSizerRowThree:Add( UI.m_buttonClear, 0, wx.wxALIGN_BOTTOM + wx.wxBOTTOM, 5 )
+
+
+	UI.fgSizerMain:Add( UI.sbSizerRowThree, 1, wx.wxEXPAND, 5 )
+
+
+	UI.bSizerInner:Add( UI.fgSizerMain, 1, wx.wxEXPAND, 5 )
+
+	UI.m_MainPanel:SetSizer( UI.bSizerInner )
 	UI.m_MainPanel:Layout()
-	UI.fgSizerMain:Fit( UI.m_MainPanel )
-	UI.bSizerMainFrameInner:Add( UI.m_MainPanel, 1, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxEXPAND, 0 )
-
-
-	UI.bSizerMainFrameOuter:Add( UI.bSizerMainFrameInner, 1, wx.wxALL + wx.wxEXPAND, 0 )
+	UI.bSizerInner:Fit( UI.m_MainPanel )
+	UI.bSizerMain:Add( UI.m_MainPanel, 1, wx.wxEXPAND, 5 )
 
 end -- END addWxWidgetComponents()
 
