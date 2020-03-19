@@ -91,7 +91,9 @@ local UI = {}
 local DATA = {}
 
 local INST = mc.mcGetInstance()
-local ACTION_BUTTON_TEXT = "Run"
+local RUN_BUTTON_TEXT = "Run"
+local CANCEL_BUTTON_TEXT = "Cancel"
+local CLEAR_STATUS_BUTTON_TEXT = "Clear"
 
 -- Creates the zTouchPlate panel that this module implements.
 function zTouchPlate.create()
@@ -187,11 +189,29 @@ end
 function handleButtonClicked(event)
 	local button = event:GetEventObject():DynamicCast("wxButton")
 	local buttonLabel = button:GetLabel()
-	if (buttonLabel == ACTION_BUTTON_TEXT) then
+	if (buttonLabel == RUN_BUTTON_TEXT) then
+		appendStatus("<START>")
 		runProbingProcedure()
+		appendStatus("<END>")
+	elseif (buttonLabel == CANCEL_BUTTON_TEXT) then
+		cancelProbingProcedure()
+	elseif (buttonLabel == CLEAR_STATUS_BUTTON_TEXT) then
+		clearStatus()
 	end
+	
 end
 
+function appendStatus(msg) 
+	UI.m_textCtrlStatusLine:AppendText(msg.."\n")
+end
+
+function cancelProbingProcedure()
+    -- How you gunna stop me????
+end
+
+function clearStatus() 
+	UI.m_textCtrlStatusLine:Clear()
+end
 -----------------------------------------------------------------------------
 -- Z-Touchplate Zeroing Logic
 -----------------------------------------------------------------------------
@@ -201,12 +221,14 @@ function runProbingProcedure()
 	local isEnabled = mc.mcSignalGetState(mc.mcSignalGetHandle(INST, mc.OSIG_MACHINE_ENABLED))
 	if (isEnabled ~= 1) then
 		wx.wxMessageBox("Machine must be enabled to zero axes.\n\nEnable motion and try again.", "Z-TouchPlate")
+		appendStatus("Error: Mach4 not enabled.")
 		return
 	end
 	
 	-- Verify the machine is in ready state to proceed.
 	if (mc.mcCntlGetState(INST) ~= mc.MC_STATE_IDLE) then
 		wx.wxMessageBox("Machine must be in idle state to zero Axes.\nEnable or Stop Motion to continue.", "Z-TouchPlate")
+		appendStatus("Error: Mach4 not in idle state.")
 		return
 	end
 	
@@ -234,17 +256,16 @@ function zeroAllAxes()
 	local curFeedRate =  mc.mcCntlGetFRO(INST) -- Get current feed rate so we can restore it later
 	local constants = getConstants() -- either Metric or Imperial as selected by user
 	
-	executeGCode("G4 P1.")  -- The . makes this 1 second, without it the dwell would be 1 millisecond
-	executeGCode("F" .. constants.PROBE_FEED_RATE)
+	executeGCode("F" .. constants.PROBE_FEED_RATE, "Set feedrate")
 	
 	-- Probe Z-Axis (always)
 	local curZPos = mc.mcAxisGetPos(INST, mc.Z_AXIS)
 	local newZPos = curZPos - constants.Z_PROBE_DISTANCE
-	executeGCode(string.format("G31 Z%.4f", newZPos))
+	executeGCode(string.format("G31 Z%.4f", newZPos),"Probe Z-axis")
 	mc.mcAxisSetPos(INST, mc.Z_AXIS, constants.TOUCH_PLATE_HEIGHT)
 	
 	-- Move back up to probe other axes
-	executeGCode(string.format("G0 Z%.4f", constants.Z_TRAVEL_HEIGHT))
+	executeGCode(string.format("G0 Z%.4f", constants.Z_TRAVEL_HEIGHT),"Move back up")
 	
 	-- Probe X-Axis (if requested)
 	local toolRadius = DATA.toolDiameter / 2
@@ -252,13 +273,13 @@ function zeroAllAxes()
 		pauseBetweenAxesIfNeeded("X-Axis")
 		local curXPos = mc.mcAxisGetPos(INST, mc.X_AXIS)
 		local newXPos = curXPos + (constants.X_PROBE_DISTANCE * X_PROBE_DIRECTION[DATA.orientation])
-		executeGCode(string.format("G31 X%.4f", newXPos))
+		executeGCode(string.format("G31 X%.4f", newXPos), "Probe X-axis")
 		mc.mcAxisSetPos(INST, 
 			            mc.X_AXIS, 
 						(constants.TOUCH_PLATE_WIDTH - toolRadius) * X_PROBE_DIRECTION[DATA.orientation]
 		)
 		-- Center tool on the touchplate
-        executeGCode(string.format("G0 X%.4f", (constants.TOUCH_PLATE_WIDTH/2) * X_PROBE_DIRECTION[DATA.orientation]))
+        executeGCode(string.format("G0 X%.4f", (constants.TOUCH_PLATE_WIDTH/2) * X_PROBE_DIRECTION[DATA.orientation]), "Center tool")
 	end
 	
 	-- Probe Y-Axis (if requested)
@@ -266,33 +287,36 @@ function zeroAllAxes()
 		pauseBetweenAxesIfNeeded("Y-Axis") 
 		local curYPos = mc.mcAxisGetPos(INST, mc.Y_AXIS)
 		local newYPos = curYPos + (constants.Y_PROBE_DISTANCE * Y_PROBE_DIRECTION[DATA.orientation])
-		executeGCode(string.format("G31 Y%.4f", newYPos))
+		executeGCode(string.format("G31 Y%.4f", newYPos), "Probe Y-axis")
 		mc.mcAxisSetPos(INST, 
 			            mc.Y_AXIS, 
 						(constants.TOUCH_PLATE_WIDTH - toolRadius) * Y_PROBE_DIRECTION[DATA.orientation]
 		)
 		-- Center tool on the touchplate
-		executeGCode(string.format("G0 Y%.4f", (constants.TOUCH_PLATE_WIDTH/2) * Y_PROBE_DIRECTION[DATA.orientation]))
+		executeGCode(string.format("G0 Y%.4f", (constants.TOUCH_PLATE_WIDTH/2) * Y_PROBE_DIRECTION[DATA.orientation]), "Center tool")
     end
 
 	-- Lift Z-Axis and restore original feed rate
-	executeGCode(string.format("G0 Z%.4f", constants.Z_LIFT_HEIGHT))
-	executeGCode("F" .. curFeedRate)
+	executeGCode(string.format("G0 Z%.4f", constants.Z_LIFT_HEIGHT), "Lift Z")
+	executeGCode("F" .. curFeedRate, "Reset Feedrate")
 	
 	wx.wxMessageBox("Zeroing Sequence Complete.", "Z-TouchPlate")
 end -- END autoZeroMachine()
 
-function executeGCode(gCodeString)
+function executeGCode(gCodeString, descr)
 	local rc = mc.mcCntlGcodeExecuteWait(INST, gCodeString)
 	if rc ~= mc.MERROR_NOERROR then 
+		appendStatus("SUCCESS: ["..descr.."] "..gCodeString)
 		return "gcode failed", false
 	else
+		appendStatus("FAILURE: ["..descr.."] "..gCodeString)
 		return "success", true
 	end
 end
 
 function pauseBetweenAxesIfNeeded(axisStr) 
 	if (DATA.pauseBetweenAxes) then
+		appendStatus("Paused for "..axisStr)
 	    wx.wxMessageBox("Align Tool Flutes for ".. axisStr .. " travel.\n\nPress OK to continue.", "Z-TouchPlate")
 	end
 end
@@ -438,7 +462,7 @@ function loadWxWidgetComponentsForZTouchplatePanel()
 
 	UI.m_radioBoxOrientChoices = { "Left / Front", "Left / Rear", "Right / Front", "Right / Rear" }
 	UI.m_radioBoxOrient = wx.wxRadioBox( UI.m_MainPanel, wx.wxID_ANY, "Orientation", wx.wxDefaultPosition, wx.wxSize( 125,-1 ), UI.m_radioBoxOrientChoices, 1, wx.wxRA_SPECIFY_COLS )
-	UI.m_radioBoxOrient:SetSelection( 1 )
+	UI.m_radioBoxOrient:SetSelection(0)
 	UI.gSizerThreeColumn:Add( UI.m_radioBoxOrient, 0, wx.wxALIGN_CENTER_HORIZONTAL, 0 )
 
 	UI.sbSizerRowTwo = wx.wxStaticBoxSizer( wx.wxStaticBox( UI.m_MainPanel, wx.wxID_ANY, "Tool Diameter" ), wx.wxVERTICAL )
@@ -463,10 +487,10 @@ function loadWxWidgetComponentsForZTouchplatePanel()
 
 	UI.gSizerAction = wx.wxGridSizer( 2, 1, 5, 0 )
 
-	UI.m_buttonRun = wx.wxButton( UI.m_MainPanel, wx.wxID_ANY, "Run", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
+	UI.m_buttonRun = wx.wxButton( UI.m_MainPanel, wx.wxID_ANY, RUN_BUTTON_TEXT, wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
 	UI.gSizerAction:Add( UI.m_buttonRun, 0, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxTOP, 10 )
 
-	UI.m_buttonCancel = wx.wxButton( UI.m_MainPanel, wx.wxID_ANY, "Cancel", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
+	UI.m_buttonCancel = wx.wxButton( UI.m_MainPanel, wx.wxID_ANY, CANCEL_BUTTON_TEXT, wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
 	UI.gSizerAction:Add( UI.m_buttonCancel, 0, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxLEFT, 0 )
 
 	UI.m_checkBoxPauseBetweenAxes = wx.wxCheckBox( UI.m_MainPanel, wx.wxID_ANY, "Pause Between Axes", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
@@ -483,10 +507,11 @@ function loadWxWidgetComponentsForZTouchplatePanel()
 
 	UI.sbSizerRowThree = wx.wxStaticBoxSizer( wx.wxStaticBox( UI.m_MainPanel, wx.wxID_ANY, "Status" ), wx.wxHORIZONTAL )
 
-	UI.m_textCtrlStatusLine = wx.wxTextCtrl( UI.sbSizerRowThree:GetStaticBox(), wx.wxID_ANY, "", wx.wxDefaultPosition, wx.wxSize( 460,80 ), wx.wxTE_READONLY )
+	UI.m_textCtrlStatusLine = wx.wxTextCtrl( UI.sbSizerRowThree:GetStaticBox(), wx.wxID_ANY, "", wx.wxDefaultPosition, wx.wxSize( 460,80 ), wx.wxTE_MULTILINE + wx.wxTE_READONLY )
+
 	UI.sbSizerRowThree:Add( UI.m_textCtrlStatusLine, 0, wx.wxALIGN_CENTER_HORIZONTAL + wx.wxALL + wx.wxEXPAND, 5 )
 
-	UI.m_buttonClear = wx.wxButton( UI.sbSizerRowThree:GetStaticBox(), wx.wxID_ANY, "Clear", wx.wxPoint( -1,-1 ), wx.wxSize( 50,-1 ), 0 )
+	UI.m_buttonClear = wx.wxButton( UI.sbSizerRowThree:GetStaticBox(), wx.wxID_ANY, CLEAR_STATUS_BUTTON_TEXT, wx.wxPoint( -1,-1 ), wx.wxSize( 50,-1 ), 0 )
 	UI.m_buttonClear:SetToolTip( "Click to clear the text in the status line." )
 
 	UI.sbSizerRowThree:Add( UI.m_buttonClear, 0, wx.wxALIGN_BOTTOM + wx.wxBOTTOM, 5 )
