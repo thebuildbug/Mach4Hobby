@@ -192,7 +192,6 @@ function handleButtonClicked(event)
 	if (buttonLabel == RUN_BUTTON_TEXT) then
 		UI.m_buttonRun:Enable(false)
 		appendStatus("<START>")
-		--runProbingProcedure()
 		local fnSuccess, fnError = pcall(runProbingProcedure)
 		if (fnSuccess ~= true) then
 			appendStatus("Runtime Error: ".. fnError)
@@ -262,7 +261,7 @@ function zeroAllAxes()
 	local curFeedRate =  mc.mcCntlGetFRO(INST) -- Get current feed rate so we can restore it later
 	local constants = getConstants() -- either Metric or Imperial as selected by user
 	
-	executeGCode("F" .. constants.PROBE_FEED_RATE, "Set feedrate")
+	executeGCode("F" .. constants.PROBE_FEED_RATE, "Set Feedrate")
 	
 	-- Probe Z-Axis (always)
 	local curZPos = mc.mcAxisGetPos(INST, mc.Z_AXIS)
@@ -271,7 +270,7 @@ function zeroAllAxes()
 	mc.mcAxisSetPos(INST, mc.Z_AXIS, constants.TOUCH_PLATE_HEIGHT)
 	
 	-- Move back up to probe other axes
-	executeGCode(string.format("G0 Z%.4f", constants.Z_TRAVEL_HEIGHT),"Move back up")
+	executeGCode(string.format("G0 Z%.4f", constants.Z_TRAVEL_HEIGHT),"Retract")
 	
 	-- Probe X-Axis (if requested)
 	local toolRadius = DATA.toolDiameter / 2
@@ -285,7 +284,7 @@ function zeroAllAxes()
 						(constants.TOUCH_PLATE_WIDTH - toolRadius) * X_PROBE_DIRECTION[DATA.orientation]
 		)
 		-- Center tool on the touchplate
-        executeGCode(string.format("G0 X%.4f", (constants.TOUCH_PLATE_WIDTH/2) * X_PROBE_DIRECTION[DATA.orientation]), "Center tool")
+        executeGCode(string.format("G0 X%.4f", (constants.TOUCH_PLATE_WIDTH/2) * X_PROBE_DIRECTION[DATA.orientation]), "Center Tool")
 	end
 	
 	-- Probe Y-Axis (if requested)
@@ -299,11 +298,11 @@ function zeroAllAxes()
 						(constants.TOUCH_PLATE_WIDTH - toolRadius) * Y_PROBE_DIRECTION[DATA.orientation]
 		)
 		-- Center tool on the touchplate
-		executeGCode(string.format("G0 Y%.4f", (constants.TOUCH_PLATE_WIDTH/2) * Y_PROBE_DIRECTION[DATA.orientation]), "Center tool")
+		executeGCode(string.format("G0 Y%.4f", (constants.TOUCH_PLATE_WIDTH/2) * Y_PROBE_DIRECTION[DATA.orientation]), "Center Tool")
     end
 
 	-- Lift Z-Axis and restore original feed rate
-	executeGCode(string.format("G0 Z%.4f", constants.Z_LIFT_HEIGHT), "Lift Z")
+	executeGCode(string.format("G0 Z%.4f", constants.Z_LIFT_HEIGHT), "Retract")
 	executeGCode("F" .. curFeedRate, "Reset Feedrate")
 	
 	wx.wxMessageBox("Zeroing Sequence Complete.", "Z-TouchPlate")
@@ -312,10 +311,11 @@ end -- END autoZeroMachine()
 function executeGCode(gCodeString, descr)
 	local rc = mc.mcCntlGcodeExecuteWait(INST, gCodeString)
 	if rc ~= mc.MERROR_NOERROR then 
-		appendStatus("SUCCESS: ["..descr.."] "..gCodeString)
+		appendStatus("FAILURE: ["..descr.."] "..gCodeString)
+		error("gcode failed ["..gCodeString.."]", 2)
 		return "gcode failed", false
 	else
-		appendStatus("FAILURE: ["..descr.."] "..gCodeString)
+		appendStatus("SUCCESS: ["..descr.."] "..gCodeString)
 		return "success", true
 	end
 end
