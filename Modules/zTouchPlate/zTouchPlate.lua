@@ -21,26 +21,26 @@ local zTouchPlate = {}
 -----------------------------------------------------------------------------
 local IMPERIAL_CONSTANTS = {
 	TOUCH_PLATE_HEIGHT      = 1,        -- Z Touchplate is 1" (25.4mm) tall
-    TOUCH_PLATE_WIDTH       = 2.205,    -- Z Touchplate is 2.205" (56mm) wide
+	TOUCH_PLATE_WIDTH       = 2.205,    -- Z Touchplate is 2.205" (56mm) wide
 	TOUCH_PLATE_PROBE_WIDTH = 2,        -- Z Touchplate has 2" (50.8mm) square probing area
-    Z_TRAVEL_HEIGHT         = 1 + .125, -- How high to lift tool while probing X and Y (inches)
-    Z_LIFT_HEIGHT           = 1 + .5,   -- How high to lift tool after script is complete (inches)	
-    PROBE_FEED_RATE         = 10,       -- Inches Per Minute (anything from 5-12 will likely work well)
-    X_PROBE_DISTANCE        = 2,        -- How long to probe the X-Axis (inches)
-    Y_PROBE_DISTANCE        = 2 ,       -- How long to probe the Y-Axis (inches)
-    Z_PROBE_DISTANCE        = 2         -- How long to probe the Z-Axis (inches)
+	Z_TRAVEL_HEIGHT         = 1 + .125, -- How high to lift tool while probing X and Y (inches)
+	Z_LIFT_HEIGHT           = 1 + .5,   -- How high to lift tool after script is complete (inches)	
+	PROBE_FEED_RATE         = 10,       -- Inches Per Minute (anything from 5-12 will likely work well)
+	X_PROBE_DISTANCE        = 2,        -- How long to probe the X-Axis (inches)
+	Y_PROBE_DISTANCE        = 2 ,       -- How long to probe the Y-Axis (inches)
+	Z_PROBE_DISTANCE        = 2         -- How long to probe the Z-Axis (inches)
 }
 
 local METRIC_CONSTANTS = {
 	TOUCH_PLATE_HEIGHT      = 25.4,        -- Z Touchplate is 25.4mm (1") tall
-    TOUCH_PLATE_WIDTH       = 56,          -- Z Touchplate is 56mm (2.205") wide
+	TOUCH_PLATE_WIDTH       = 56,          -- Z Touchplate is 56mm (2.205") wide
 	TOUCH_PLATE_PROBE_WIDTH = 50.8,        -- Z Touchplate has 50.8mm (2") square probing area
-    Z_TRAVEL_HEIGHT         = 25.4 + 3.175,-- How high to lift tool while probing X and Y (mm)
-    Z_LIFT_HEIGHT           = 25.4 + 12.7, -- How high to lift tool after script is complete (mm)	
-    PROBE_FEED_RATE         = 254,         -- Inches Per Minute (anything from 254-305 will likely work well)
-    X_PROBE_DISTANCE        = 50.8,        -- Distance to probe the X-Axis (mm)
-    Y_PROBE_DISTANCE        = 50.8,        -- Distance to probe the Y-Axis (mm)
-    Z_PROBE_DISTANCE        = 50.8         -- Distance to probe the Z-Axis (mm)
+	Z_TRAVEL_HEIGHT         = 25.4 + 3.175,-- How high to lift tool while probing X and Y (mm)
+	Z_LIFT_HEIGHT           = 25.4 + 12.7, -- How high to lift tool after script is complete (mm)	
+	PROBE_FEED_RATE         = 254,         -- Inches Per Minute (anything from 254-305 will likely work well)
+	X_PROBE_DISTANCE        = 50.8,        -- Distance to probe the X-Axis (mm)
+	Y_PROBE_DISTANCE        = 50.8,        -- Distance to probe the Y-Axis (mm)
+	Z_PROBE_DISTANCE        = 50.8         -- Distance to probe the Z-Axis (mm)
 }
 
 -- Maps the Touchplate Orientation option names with their
@@ -82,35 +82,38 @@ local INCHES = 0
 local MILLIMETERS = 1
 -- Lookup for unit of measure names
 local UNITS = {[INCHES]      = "INCHES",
-		       [MILLIMETERS] = "MILLIMETERS"}
-		
+			   [MILLIMETERS] = "MILLIMETERS"}
+
 -- Table to hold all UI elements
 local UI = {}
 
 -- Table to hold user input data
-local DATA = {}
+local userInputData = {}
 
 local INST = mc.mcGetInstance()
 local RUN_BUTTON_TEXT = "Run"
 local CANCEL_BUTTON_TEXT = "Cancel"
 local CLEAR_STATUS_BUTTON_TEXT = "Clear"
 
+-- Current machine feedrate so we can restore it
+local curFeedRate = nil
+
 -- Creates the zTouchPlate panel that this module implements.
 function zTouchPlate.create()
 	
 	-- Create the main Frame and Panel if we're running in standalone mode.
 	if (mcLuaPanelParent == nil) then
-		UI.MainFrame = wx.wxFrame (wx.NULL, 
-			                       wx.wxID_ANY, 
-								   "Z-Touch Plate: Edge Finder Tool",
-								   wx.wxDefaultPosition,
-								   wx.wxSize(-1,-1), 
-								   wx.wxDEFAULT_FRAME_STYLE+wx.wxTAB_TRAVERSAL )
-		UI.m_MainPanel = wx.wxPanel( UI.MainFrame, 
-			                         wx.wxID_ANY, 
-									 wx.wxDefaultPosition, 
-									 wx.wxDefaultSize, 
-									 wx.wxTAB_TRAVERSAL )
+		UI.MainFrame = wx.wxFrame(wx.NULL, 
+								  wx.wxID_ANY, 
+								  "Z-Touch Plate: Edge Finder Tool",
+								  wx.wxDefaultPosition,
+								  wx.wxSize(-1,-1), 
+								  wx.wxDEFAULT_FRAME_STYLE+wx.wxTAB_TRAVERSAL )
+		UI.m_MainPanel = wx.wxPanel(UI.MainFrame, 
+									wx.wxID_ANY, 
+									wx.wxDefaultPosition, 
+									wx.wxDefaultSize, 
+									wx.wxTAB_TRAVERSAL )
 		UI.MainFrame:SetSizeHints( wx.wxDefaultSize, wx.wxDefaultSize )
 		UI.EventHandler = UI.MainFrame:GetEventHandler()
 	else
@@ -120,9 +123,7 @@ function zTouchPlate.create()
 		local window = UI.m_MainPanel:GetParent()
 		local wsize = window:GetSize()
 		UI.m_MainPanel:SetSize(wsize)
-		--UI.m_MainPanel:SetSize(700,500)
-		UI.EventHandler = UI.m_MainPanel:GetEventHandler()
-	end -- if (mcLuaPanelParent == nil)
+	end
 	
 	loadWxWidgetComponentsForZTouchplatePanel()
 	
@@ -141,7 +142,7 @@ function zTouchPlate.create()
 		-- Running within Mach4 screen
         local window = UI.m_MainPanel:GetParent()
         window:Connect(wx.wxID_ANY, 
-			           wx.wxEVT_SIZE,
+					   wx.wxEVT_SIZE,
 					   function(event)
 						   local wsize = event:GetSize()
 						   UI.m_MainPanel:SetSize(wsize)
@@ -149,7 +150,6 @@ function zTouchPlate.create()
 						   event:Skip()
 					   end)
     end
-	
 end -- END zTouchPlate.create()
 
 -----------------------------------------------------------------------------
@@ -158,6 +158,17 @@ end -- END zTouchPlate.create()
 -- Bind functions to the various UI events triggered by the user interacting
 -- with the wxWidget UI components.
 function bindUIEvents()
+	
+	-- Register the resumeZTouchPlateCoroutine() function as a callback
+	-- for the UI event named wxEVT_UPDATE_UI which should be called by the
+	-- GUI chunk whenever the GUI is 'idle'
+	myMainFrame = wx.wxGetApp()
+	myMainFrame:Connect(wx.wxEVT_UPDATE_UI, 
+						   function(event)
+								resumeZTouchPlateCoroutine()
+								event:Skip()
+						   end
+	)
 	
 	-- Axis CheckBoxes
 	UI.m_MainPanel:Connect(wx.wxID_ANY,
@@ -175,7 +186,6 @@ function bindUIEvents()
 						   end)
 end
 
-
 -- Handle CheckBoxClicked events for entire panel
 function handleCheckBoxClicked(event)
 	local checkBox = event:GetEventObject():DynamicCast("wxCheckBox")
@@ -190,35 +200,50 @@ function handleButtonClicked(event)
 	local button = event:GetEventObject():DynamicCast("wxButton")
 	local buttonLabel = button:GetLabel()
 	if (buttonLabel == RUN_BUTTON_TEXT) then
-		UI.m_buttonRun:Enable(false)
-		appendStatus("<START>")
 		local fnSuccess, fnError = pcall(runProbingProcedure)
 		if (fnSuccess ~= true) then
-			appendStatus("Runtime Error: ".. fnError)
+			appendStatus("Unexpected Error: ".. fnError)
+			exitRunProbingProcedure()
 		end
-		appendStatus("<END>")
-		UI.m_buttonRun:Enable(true)
 	elseif (buttonLabel == CANCEL_BUTTON_TEXT) then
 		cancelProbingProcedure()
 	elseif (buttonLabel == CLEAR_STATUS_BUTTON_TEXT) then
 		clearStatus()
 	end
-	
 end
 
-function appendStatus(msg) 
-	UI.m_textCtrlStatusLine:AppendText(msg.."\n")
+-- Appends the given string to the status bar text widget
+--
+-- @param msg - string containing message to write to status text widget
+-- @param addNewline - (optional default=True) boolean indicating whether to add a newline char
+function appendStatus(msg, addNewline) 
+	if (addNewline == nil) then
+		addNewline = true
+	end
+	if (addNewline) then
+		UI.m_textCtrlStatusLine:AppendText(msg.."\n")
+	else 
+		UI.m_textCtrlStatusLine:AppendText(msg.." ")
+	end
 end
 
 function cancelProbingProcedure()
-    -- How you gunna stop me????
+	-- Kill the coroutine by setting a debug hook.
+	debug.sethook(zTouchPlateCoroutine, 
+				  function()
+						error("Probing Canceled by user.")
+				  end, "l")
+	-- NOTE: Known issue: PMDX-424 does not seem to exit "PROBE" mode successfully by the following command
+	mc.mcMotionSetProbeComplete(INST)
+	mc.mcCntlCycleStop(INST)
 end
 
 function clearStatus() 
 	UI.m_textCtrlStatusLine:Clear()
 end
+
 -----------------------------------------------------------------------------
--- Z-Touchplate Zeroing Logic
+-- Z-TouchPlate Probing Logic
 -----------------------------------------------------------------------------
 function runProbingProcedure()
 
@@ -246,11 +271,17 @@ function runProbingProcedure()
 	-- Show message box - useful for debugging user input
 	--printUserData()
 	
-	-- Do the actual probing motions
-	zeroAllAxes()
+	-- Store the current feed rate so we can restore it later
+	curFeedRate =  mc.mcCntlGetFRO(INST)
 	
-	-- Clear input data
-	clearUserInputData()
+    -- Perform the probing procedure by running
+	-- the zeroAllAxes function as a coroutine.
+	--
+	-- NOTE: This only creates the coroutine. The coroutine is
+	--       executed when coroutine.resume(zTouchPlateCoroutine)
+	--       is called by the wxWidget wxEVT_UPDATE_UI event 
+	--       callback function resumeZTouchPlateCoroutine() below.
+    zTouchPlateCoroutine = coroutine.create(zeroAllAxes)
 	
 end -- END: runProbingProcedure()
 
@@ -258,71 +289,144 @@ end -- END: runProbingProcedure()
 -- Performs the actual zeroing of the three axes.
 -- Z-Axis is always zeroed. X and Y are done per user selection.
 function zeroAllAxes()
-	local curFeedRate =  mc.mcCntlGetFRO(INST) -- Get current feed rate so we can restore it later
-	local constants = getConstants() -- either Metric or Imperial as selected by user
+	UI.m_buttonRun:Enable(false)
+	appendStatus("<START>")
 	
-	executeGCode("F" .. constants.PROBE_FEED_RATE, "Set Feedrate")
+	-- Select which constants to use (Metric/Imperial) based on user input
+	local constants = getConstants()
 	
+    -- Set the probing feedrate
+	feedrateGcode = "F"..constants.PROBE_FEED_RATE
+	appendStatus("[Set Feedrate] "..feedrateGcode.." (SUCCESS)")
+	mc.mcCntlGcodeExecuteWait(INST, feedrateGcode)
+
 	-- Probe Z-Axis (always)
 	local curZPos = mc.mcAxisGetPos(INST, mc.Z_AXIS)
 	local newZPos = curZPos - constants.Z_PROBE_DISTANCE
 	executeGCode(string.format("G31 Z%.4f", newZPos),"Probe Z-axis")
+	verifyTouchplateStrike()  -- Make sure the probe actually struck the touchplate
+	appendStatus("(SUCCESS)") -- If we've made to this line, the gcode cmd must have succeeded
+
+	-- Set work coordinate of Z-axis 
 	mc.mcAxisSetPos(INST, mc.Z_AXIS, constants.TOUCH_PLATE_HEIGHT)
 	
 	-- Move back up to probe other axes
 	executeGCode(string.format("G0 Z%.4f", constants.Z_TRAVEL_HEIGHT),"Retract")
+	appendStatus("(SUCCESS)")
 	
 	-- Probe X-Axis (if requested)
-	local toolRadius = DATA.toolDiameter / 2
-	if (DATA.probeXAxis) then
-		pauseBetweenAxesIfNeeded("X-Axis")
+	local toolRadius = userInputData.toolDiameter / 2
+	if (userInputData.probeXAxis) then
+		pauseBetweenAxesIfNeeded("X-Axis", userInputData)
 		local curXPos = mc.mcAxisGetPos(INST, mc.X_AXIS)
-		local newXPos = curXPos + (constants.X_PROBE_DISTANCE * X_PROBE_DIRECTION[DATA.orientation])
+		local newXPos = curXPos + (constants.X_PROBE_DISTANCE * X_PROBE_DIRECTION[userInputData.orientation])
 		executeGCode(string.format("G31 X%.4f", newXPos), "Probe X-axis")
+		verifyTouchplateStrike()
+		appendStatus("(SUCCESS)")
+
 		mc.mcAxisSetPos(INST, 
 			            mc.X_AXIS, 
-						(constants.TOUCH_PLATE_WIDTH - toolRadius) * X_PROBE_DIRECTION[DATA.orientation]
+						(constants.TOUCH_PLATE_WIDTH - toolRadius) * X_PROBE_DIRECTION[userInputData.orientation]
 		)
 		-- Center tool on the touchplate
-        executeGCode(string.format("G0 X%.4f", (constants.TOUCH_PLATE_WIDTH/2) * X_PROBE_DIRECTION[DATA.orientation]), "Center Tool")
+        executeGCode(string.format("G0 X%.4f", (constants.TOUCH_PLATE_WIDTH/2) * X_PROBE_DIRECTION[userInputData.orientation]), "Center Tool")
+		appendStatus("(SUCCESS)")
 	end
 	
 	-- Probe Y-Axis (if requested)
-	if (DATA.probeYAxis) then
-		pauseBetweenAxesIfNeeded("Y-Axis") 
+	if (userInputData.probeYAxis) then
+		pauseBetweenAxesIfNeeded("Y-Axis", userInputData) 
 		local curYPos = mc.mcAxisGetPos(INST, mc.Y_AXIS)
-		local newYPos = curYPos + (constants.Y_PROBE_DISTANCE * Y_PROBE_DIRECTION[DATA.orientation])
+		local newYPos = curYPos + (constants.Y_PROBE_DISTANCE * Y_PROBE_DIRECTION[userInputData.orientation])
 		executeGCode(string.format("G31 Y%.4f", newYPos), "Probe Y-axis")
+		verifyTouchplateStrike()
+		appendStatus("(SUCCESS)")
 		mc.mcAxisSetPos(INST, 
 			            mc.Y_AXIS, 
-						(constants.TOUCH_PLATE_WIDTH - toolRadius) * Y_PROBE_DIRECTION[DATA.orientation]
+						(constants.TOUCH_PLATE_WIDTH - toolRadius) * Y_PROBE_DIRECTION[userInputData.orientation]
 		)
 		-- Center tool on the touchplate
-		executeGCode(string.format("G0 Y%.4f", (constants.TOUCH_PLATE_WIDTH/2) * Y_PROBE_DIRECTION[DATA.orientation]), "Center Tool")
+		executeGCode(string.format("G0 Y%.4f", (constants.TOUCH_PLATE_WIDTH/2) * Y_PROBE_DIRECTION[userInputData.orientation]), "Center Tool")
+		appendStatus("(SUCCESS)")
     end
 
-	-- Lift Z-Axis and restore original feed rate
+	-- Lift Z-Axis to the specified lift height
 	executeGCode(string.format("G0 Z%.4f", constants.Z_LIFT_HEIGHT), "Retract")
-	executeGCode("F" .. curFeedRate, "Reset Feedrate")
+	appendStatus("(SUCCESS)")
 	
-	wx.wxMessageBox("Zeroing Sequence Complete.", "Z-TouchPlate")
-end -- END autoZeroMachine()
+end -- END zeroAllAxes()
 
+-- Submits gcode for execution by Mach4
+--
+-- @param - gCodeString - string containing the gcode to execute
+-- @param - descr - string description that documents the gcode command
+--                  used in status message on success/failure of gcode.
 function executeGCode(gCodeString, descr)
-	local rc = mc.mcCntlGcodeExecuteWait(INST, gCodeString)
-	if rc ~= mc.MERROR_NOERROR then 
-		appendStatus("FAILURE: ["..descr.."] "..gCodeString)
-		error("gcode failed ["..gCodeString.."]", 2)
-		return "gcode failed", false
-	else
-		appendStatus("SUCCESS: ["..descr.."] "..gCodeString)
-		return "success", true
+	appendStatus("["..descr.."]: "..gCodeString, false)
+	mc.mcCntlGcodeExecute(INST, gCodeString)
+	coroutine.yield()
+end
+
+function verifyTouchplateStrike()
+	if (mc.mcCntlProbeGetStrikeStatus(INST) ~= 1) then
+		error("Probe never touched.")
 	end
 end
 
-function pauseBetweenAxesIfNeeded(axisStr) 
-	if (DATA.pauseBetweenAxes) then
-		appendStatus("Paused for "..axisStr)
+function restoreFeedrate()
+	local resetGcode = "F"..curFeedRate
+	appendStatus("[Reset Feedrate]: "..resetGcode.." (SUCCESS)")
+	mc.mcCntlGcodeExecute(INST, resetGcode)
+end
+
+-- Intended to be triggered by GUI code chunk to allow DROs to update
+-- when probing motion is underway. This function resumes the suspended 
+-- zeroAllAxes() coroutine when appropriate or kills the coroutine by 
+-- nulling out its reference. This method is also responsible for exiting
+-- the runProbingProcedure gracefully i.e. re-enabling the 'Run' button,
+-- outputting failure status messages as needed.
+function resumeZTouchPlateCoroutine()
+    
+	-- Return quickly if the coroutine does not exist.
+	if (zTouchPlateCoroutine == nil) then
+		return
+	end
+	
+	-- Get the current status of the coroutine (suspended, running, or dead)
+	crStatus = coroutine.status(zTouchPlateCoroutine)
+	
+	if (crStatus == "dead") then
+		exitRunProbingProcedure()
+	elseif (crStatus == "suspended") then
+		-- Only proceed if Mach4 is in 'Idle' state
+		if (mc.mcCntlGetState(INST) == 0) then
+			-- NOTE: when an error is thrown from the coroutine isGcodeCmd will always be nil
+			local crRetCode, errMsg, isGcodeCmd = coroutine.resume(zTouchPlateCoroutine)
+			if (crRetCode ~= true)  then
+				appendStatus("(FAILURE):"..errMsg)
+				exitRunProbingProcedure()
+			end
+		end
+	end
+end
+
+
+function exitRunProbingProcedure()
+	-- Kill the coroutine
+	zTouchPlateCoroutine = nil
+	
+	-- Reset Feedrate to whatever it was before
+	restoreFeedrate()
+
+	appendStatus("<END>")
+	wx.wxMessageBox("Zeroing Sequence Complete.", "Z-TouchPlate")
+	UI.m_buttonRun:Enable(true)
+end
+
+
+function pauseBetweenAxesIfNeeded(axisStr, userInputData) 
+	if (userInputData.pauseBetweenAxes) then
+		appendStatus("[Paused]: "..axisStr)
 	    wx.wxMessageBox("Align Tool Flutes for ".. axisStr .. " travel.\n\nPress OK to continue.", "Z-TouchPlate")
 	end
 end
@@ -330,9 +434,9 @@ end
 -- Return constants based on user selection (metric or imperial)
 function getConstants()
 	local constants = nil
-	if (DATA.unitOfMeasure == INCHES) then
+	if (userInputData.unitOfMeasure == INCHES) then
 		constants = IMPERIAL_CONSTANTS
-	elseif (DATA.unitOfMeasure == MILLIMETERS) then
+	elseif (userInputData.unitOfMeasure == MILLIMETERS) then
 		constants = METRIC_CONSTANTS
 	end
 	return constants
@@ -340,37 +444,40 @@ end
 
 -- Assemble the input data the user has entered.
 function gatherUserInputData() 
+	-- Clear the stored data from a previous run
+	clearStoredUserInputData()
+	
 	-- Axes to probe
-	DATA.probeZAxis = true; -- Z-Axis is always probed
+	userInputData.probeZAxis = true; -- Z-Axis is always probed
 	if (UI.m_checkBoxXAxis:GetValue()) then
-		DATA.probeXAxis = true
+		userInputData.probeXAxis = true
 	else
-		DATA.probeXAxis = false
+		userInputData.probeXAxis = false
 	end
 	if (UI.m_checkBoxYAxis:GetValue()) then
-		DATA.probeYAxis = true
+		userInputData.probeYAxis = true
 	else
-		DATA.probeYAxis = false
+		userInputData.probeYAxis = false
 	end
 	
 	-- Touch plate orientation
-	DATA.orientation = UI.m_radioBoxOrient:GetSelection()
+	userInputData.orientation = UI.m_radioBoxOrient:GetSelection()
 	
 	-- Tool Diameter
-	DATA.toolDiameter = tonumber(UI.m_textCtrlToolDiameter:GetValue())
+	userInputData.toolDiameter = tonumber(UI.m_textCtrlToolDiameter:GetValue())
 	
 	-- Unit of Measure
 	if (UI.m_radioBtnMillimeters:GetValue()) then
-		DATA.unitOfMeasure = MILLIMETERS
+		userInputData.unitOfMeasure = MILLIMETERS
 	else
-		DATA.unitOfMeasure = INCHES
+		userInputData.unitOfMeasure = INCHES
 	end
 	
 	-- Pause Between Measures
 	if (UI.m_checkBoxPauseBetweenAxes:GetValue()) then 
-		DATA.pauseBetweenAxes = true
+		userInputData.pauseBetweenAxes = true
 	else
-		DATA.pauseBetweenAxes = false
+		userInputData.pauseBetweenAxes = false
 	end
 	
 end -- END gatherUserInputData()
@@ -379,7 +486,7 @@ end -- END gatherUserInputData()
 function isUserInputDataValid()
 	
 	-- ToolDiameter must be a valid number.
-	if (DATA.toolDiameter== nil) then
+	if (userInputData.toolDiameter== nil) then
 		wx.wxMessageBox("Tool Diameter must be a valid number!", "Z-TouchPlate: Invalid Input")
 		return false
 	end
@@ -387,10 +494,10 @@ function isUserInputDataValid()
 	-- ToolDiameter must greater than zero and less than the width 
 	-- of the probing pad (handle both metric and imperial cases).
 	local constants = getConstants()
-	if (DATA.toolDiameter <= 0) then
+	if (userInputData.toolDiameter <= 0) then
 		wx.wxMessageBox("Tool Diameter must be greater than zero!", "Z-TouchPlate: Invalid Input", wx.wxICON_ERROR)
 		return false
-	elseif (DATA.toolDiameter > constants.TOUCH_PLATE_PROBE_WIDTH) then
+	elseif (userInputData.toolDiameter > constants.TOUCH_PLATE_PROBE_WIDTH) then
 		wx.wxMessageBox("Tool Diameter cannot be greater than\nthe Touch Plate probing area!", "Z-TouchPlate: Invalid Input", wx.wxICON_ERROR)
 		return false
 	end
@@ -398,26 +505,26 @@ function isUserInputDataValid()
 	return true 
 end -- END isUserInputDataValid()
 
-function clearUserInputData()
-	DATA.probeZAxis = nil
-	DATA.probeXAxis = nil
-	DATA.probeYAxis = nil
-    DATA.orientation = nil
-	DATA.toolDiameter = nil
-	DATA.unitOfMeasure = nil
-	DATA.pauseBetweenAxes = nil
+function clearStoredUserInputData()
+	userInputData.probeZAxis = nil
+	userInputData.probeXAxis = nil
+	userInputData.probeYAxis = nil
+    userInputData.orientation = nil
+	userInputData.toolDiameter = nil
+	userInputData.unitOfMeasure = nil
+	userInputData.pauseBetweenAxes = nil
 end
 
 -- Utility Method to help debug user input
 function printUserData()
 	local msg = "---------------------------------------------------\n" ..
-	            "  Z-axis: \t" .. tostring(DATA.probeZAxis) .. "\n" ..
-	            "  X-axis: \t" .. tostring(DATA.probeXAxis) .. "\n" ..
-				"  Y-axis: \t" .. tostring(DATA.probeYAxis) .. "\n" ..
-				"  Orient: \t" .. ORIENTATION[DATA.orientation] .. "\n" ..
-				"Tool Dia: \t" .. DATA.toolDiameter .. "\n" ..
-				"    Unit: \t" .. UNITS[DATA.unitOfMeasure] .. "\n" ..
-				"   Pause: \t" .. tostring(DATA.pauseBetweenAxes) .. "\n" ..
+				"  Z-axis: \t" .. tostring(userInputData.probeZAxis) .. "\n" ..
+				"  X-axis: \t" .. tostring(userInputData.probeXAxis) .. "\n" ..
+				"  Y-axis: \t" .. tostring(userInputData.probeYAxis) .. "\n" ..
+				"  Orient: \t" .. ORIENTATION[userInputData.orientation] .. "\n" ..
+				"Tool Dia: \t" .. userInputData.toolDiameter .. "\n" ..
+				"    Unit: \t" .. UNITS[userInputData.unitOfMeasure] .. "\n" ..
+				"   Pause: \t" .. tostring(userInputData.pauseBetweenAxes) .. "\n" ..
 				"---------------------------------------------------\n"
 	wx.wxMessageBox(msg,"Z-TouchPlate: Debug Info",wx.wxICON_EXCLAMATION)
 end
@@ -432,7 +539,7 @@ end
 --   parent frame (which is done above in the Main() function).
 function loadWxWidgetComponentsForZTouchplatePanel()
 	
-    UI.bSizerMain = wx.wxBoxSizer( wx.wxVERTICAL )
+	UI.bSizerMain = wx.wxBoxSizer( wx.wxVERTICAL )
 
 	UI.bSizerInner = wx.wxBoxSizer( wx.wxVERTICAL )
 
@@ -533,7 +640,7 @@ function loadWxWidgetComponentsForZTouchplatePanel()
 	UI.bSizerInner:Fit( UI.m_MainPanel )
 	UI.bSizerMain:Add( UI.m_MainPanel, 1, wx.wxEXPAND, 5 )
 
-end -- END addWxWidgetComponents()
+end -- END loadWxWidgetComponentsForZTouchplatePanel()
 
 -----------------------------------------------------------------------------
 -- To RUN / DEBUG this module within ZeroBrane Studio, un-comment the 
