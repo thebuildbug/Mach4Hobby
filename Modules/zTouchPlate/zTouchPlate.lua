@@ -203,7 +203,7 @@ function handleButtonClicked(event)
 		local fnSuccess, fnError = pcall(runProbingProcedure)
 		if (fnSuccess ~= true) then
 			appendStatus("Unexpected Error: ".. fnError)
-			exitRunProbingProcedure()
+			exitRunProbingProcedure(false)
 		end
 	elseif (buttonLabel == CANCEL_BUTTON_TEXT) then
 		cancelProbingProcedure()
@@ -297,15 +297,16 @@ function zeroAllAxes()
 	
     -- Set the probing feedrate
 	feedrateGcode = "F"..constants.PROBE_FEED_RATE
-	appendStatus("[Set Feedrate] "..feedrateGcode.." (SUCCESS)")
+	appendStatus("[Set Feedrate]: "..feedrateGcode, false)
 	mc.mcCntlGcodeExecuteWait(INST, feedrateGcode)
+	appendStatus(" (SUCCESS)") -- If we've made to this line, the gcode cmd must have succeeded
 
 	-- Probe Z-Axis (always)
 	local curZPos = mc.mcAxisGetPos(INST, mc.Z_AXIS)
 	local newZPos = curZPos - constants.Z_PROBE_DISTANCE
 	executeGCode(string.format("G31 Z%.4f", newZPos),"Probe Z-axis")
 	verifyTouchplateStrike()  -- Make sure the probe actually struck the touchplate
-	appendStatus("(SUCCESS)") -- If we've made to this line, the gcode cmd must have succeeded
+	appendStatus("(SUCCESS)") 
 
 	-- Set work coordinate of Z-axis 
 	mc.mcAxisSetPos(INST, mc.Z_AXIS, constants.TOUCH_PLATE_HEIGHT)
@@ -400,18 +401,22 @@ function resumeZTouchPlateCoroutine()
 	elseif (crStatus == "suspended") then
 		-- Only proceed if Mach4 is in 'Idle' state
 		if (mc.mcCntlGetState(INST) == 0) then
-			-- NOTE: when an error is thrown from the coroutine isGcodeCmd will always be nil
-			local crRetCode, errMsg, isGcodeCmd = coroutine.resume(zTouchPlateCoroutine)
+			local crRetCode, errMsg = coroutine.resume(zTouchPlateCoroutine)
 			if (crRetCode ~= true)  then
 				appendStatus("(FAILURE):"..errMsg)
-				exitRunProbingProcedure()
+				mc.mcCntlSetLastError(INST, "[zTouchPlate]: "..errMsg)
+				exitRunProbingProcedure(false)
 			end
 		end
 	end
 end
 
 
-function exitRunProbingProcedure()
+function exitRunProbingProcedure(exitClean)
+	if (exitClean == nil) then
+		exitClean = true
+	end
+	
 	-- Kill the coroutine
 	zTouchPlateCoroutine = nil
 	
@@ -419,7 +424,10 @@ function exitRunProbingProcedure()
 	restoreFeedrate()
 
 	appendStatus("<END>")
-	wx.wxMessageBox("Zeroing Sequence Complete.", "Z-TouchPlate")
+	if (exitClean) then
+		wx.wxMessageBox("Zeroing Sequence Complete.", "Z-TouchPlate")
+	end
+	
 	UI.m_buttonRun:Enable(true)
 end
 
