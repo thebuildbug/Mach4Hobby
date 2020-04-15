@@ -127,6 +127,8 @@ function zTouchPlate.create()
 	
 	loadWxWidgetComponentsForZTouchplatePanel()
 	
+	setDefaultUnitOfMeasure()
+	
 	bindUIEvents()
 
 	-- Show the panel just created
@@ -185,6 +187,19 @@ function bindUIEvents()
 								handleButtonClicked(event)
 						   end)
 end
+
+function setDefaultUnitOfMeasure()
+	units, rc = mc.mcCntlGetUnitsCurrent(INST)
+	appendStatus("CurrentUnits: "..units)
+	if (units ~= 200) then
+		UI.m_radioBtnInches:SetValue(false)
+		UI.m_radioBtnMillimeters:SetValue(true)
+	else
+		UI.m_radioBtnInches:SetValue(true)
+		UI.m_radioBtnMillimeters:SetValue(false)
+	end
+end
+
 
 -- Handle CheckBoxClicked events for entire panel
 function handleCheckBoxClicked(event)
@@ -594,7 +609,6 @@ function loadWxWidgetComponentsForZTouchplatePanel()
 	UI.bSizerRow2:Add( UI.m_textCtrlToolDiameter, 0, wx.wxALIGN_CENTER_VERTICAL + wx.wxALL, 5 )
 
 	UI.m_radioBtnInches = wx.wxRadioButton( UI.sbSizerRowTwo:GetStaticBox(), wx.wxID_ANY, "Inches", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
-	UI.m_radioBtnInches:SetValue(true)
 	UI.bSizerRow2:Add( UI.m_radioBtnInches, 0, wx.wxALIGN_CENTER_VERTICAL + wx.wxALL, 5 )
 
 	UI.m_radioBtnMillimeters = wx.wxRadioButton( UI.sbSizerRowTwo:GetStaticBox(), wx.wxID_ANY, "Millimeters", wx.wxDefaultPosition, wx.wxDefaultSize, 0 )
