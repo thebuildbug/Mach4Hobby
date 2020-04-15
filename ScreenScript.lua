@@ -1,13 +1,23 @@
 -- For ZeroBrane debugging.
-package.path = package.path .. ";./ZeroBraneStudio/lualibs/mobdebug/?.lua;"
+package.path = package.path .. ";./ZeroBraneStudio/lualibs/mobdebug/?.lua"
 
--- For installed modules support.
-package.path = package.path .. ";./Modules/?.lua;"
-package.cpath = package.cpath .. ";./Modules/?.dll;"
+-- For installed profile modules support.
+package.path = package.path .. ";./Profiles/BuildBugCNC/Modules/?.lua"
+package.path = package.path .. ";./Profiles/BuildBugCNC/Modules/?.luac"
+package.path = package.path .. ";./Profiles/BuildBugCNC/Modules/?.mcs"
+package.path = package.path .. ";./Profiles/BuildBugCNC/Modules/?.mcc"
+package.cpath = package.cpath .. ";./Profiles/BuildBugCNC/Modules/?.dll"
+
+-- For installed global modules support.
+package.path = package.path .. ";./Modules/?.lua"
+package.path = package.path .. ";./Modules/?.luac"
+package.path = package.path .. ";./Modules/?.mcs"
+package.path = package.path .. ";./Modules/?.mcc"
+package.cpath = package.cpath .. ";./Modules/?.dll"
 
 -- PMC genearated module load code.
-package.path = package.path .. ";./Pmc/?.lua;"
-package.path = package.path .. ";./Pmc/?.luac;"
+package.path = package.path .. ";./Pmc/?.lua"
+package.path = package.path .. ";./Pmc/?.luac"
 
 
 -- PMC genearated module load code.
@@ -607,7 +617,7 @@ function Mach_Signal_Script(sig, state)
 end
 
 -- Timer script
--- 'timer' contains the timer number that fired the script.
+-- 'timer' contains the timer number that fired the															 script.
 function Mach_Timer_Script(timer)
     
 end
@@ -733,7 +743,7 @@ function droJogRate_On_Modify_Script(...)
     local val = scr.GetProperty("droJogRate", "Value")
     mc.mcProfileWriteString(inst, "PersistentDROs", "droJogRate", string.format (val)) --Create a register and write the machine coordinates to it
 end
-function panelZTouch_1__Script(...)
+function panelZTouch_Script(...)
     local inst = mc.mcGetInstance()
     
     -- Load the zTouchPlate module
@@ -741,10 +751,12 @@ function panelZTouch_1__Script(...)
     local path = mc.mcCntlGetMachDir(inst)
     package.path = path .. "\\Modules\\zTouchPlate\\?.lua;"
     package.loaded.zTouchPlate = nil
+    
     local ztp = require "zTouchPlate"
     
     -- Load UI and code to implement this panel
     ztp.create()
+    
 end
 function tabPositionsExtens_On_Enter_Script(...)
     local rc;
