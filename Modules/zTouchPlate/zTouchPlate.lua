@@ -190,7 +190,6 @@ end
 
 function setDefaultUnitOfMeasure()
 	units, rc = mc.mcCntlGetUnitsCurrent(INST)
-	appendStatus("CurrentUnits: "..units)
 	if (units ~= 200) then
 		UI.m_radioBtnInches:SetValue(false)
 		UI.m_radioBtnMillimeters:SetValue(true)
